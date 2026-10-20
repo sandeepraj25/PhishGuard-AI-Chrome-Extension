@@ -91,6 +91,14 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 ### 3.11 Licence keys
 - HMAC-SHA256 signed keys verified only on the server (the secret never ships), plus a database status check so cancellations take effect; one-time key pickup via a random claim token passed through Paddle `customData`; webhook signatures checked with a 5-minute replay window and constant-time comparison.
 
+### 3.12 Drift monitoring (PSI)
+- **What:** Population Stability Index between the training window and the newest window, per feature and for the model score: bins = deciles of the reference, PSI = Σ (cur − ref)·ln(cur/ref).
+- **Real-life example:** a shopkeeper notices that this month's customers buy very different things from last year's — the old stock plan (model) may no longer fit.
+- **Time:** O(n log n) for the quantiles, O(n) per feature after that.
+
+### 3.13 Seats without races
+- Device enrolment takes a per-org advisory lock in Postgres, counts devices and inserts in one transaction — otherwise two browsers enrolling at the same time could both take the last seat.
+
 ## 4. Mistakes found and fixed (good interview stories)
 
 1. **Label leakage from data sources.** Tranco gives bare domains (`https://site.com/`), phishing feeds give full URLs with paths. A model would learn "has a path ⇒ phishing". Fix: `--host-only` mode for training/eval when legit data has no paths, a warning in `clean_dedupe.py`, and a recommendation to add a legit source with real paths.
@@ -110,7 +118,8 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 15. **`captureVisibleTab` needs `<all_urls>`.** The http/https host patterns are not enough — the screenshot silently failed until the e2e test logged the error.
 16. **"Visited before" race.** Navigation scoring marked the site as seen, then the password-moment verdict a second later counted that as a *previous* visit and subtracted 25 points. Now a mark must be at least an hour old.
 17. **Robustness surprise.** Homoglyph swaps *raised* recall for the rules baseline (they trigger the look-alike rule); the most damaging attack is plain evasion — removing scary words and moving to `.com`.
-18. **Synthetic data is too easy.** PR-AUC 1.000 on the synthetic sample only shows the model learned the generator's templates. The README says so in a warning box generated from the result JSON's `dataset` field.
+18. **Dashboard hid people with zero warnings.** The first version built rows only from events; the admin could not tell "not targeted" from "not enrolled". Rows now come from enrolled devices.
+19. **Synthetic data is too easy.** PR-AUC 1.000 on the synthetic sample only shows the model learned the generator's templates. The README says so in a warning box generated from the result JSON's `dataset` field.
 
 ---
 

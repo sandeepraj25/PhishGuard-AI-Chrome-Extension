@@ -1,7 +1,12 @@
 import { Redis } from 'ioredis';
 
 import { adminRoutes } from './api/admin';
+import { errorRoutes } from './api/errors';
+import { feedRoutes } from './api/feed';
 import { licenseRoutes } from './api/license';
+import { teamsRoutes } from './api/teams';
+import { serveDashboard } from './dashboard';
+import { WindowLimiter } from './lib/windowLimiter';
 import { buildApp } from './app';
 import { loadConfig } from './config';
 import { MemoryStore } from './db/memoryStore';
@@ -27,6 +32,10 @@ const app = await buildApp({
   reportRateLimitPerMinute: cfg.reportRateLimitPerMinute,
   logLevel: cfg.logLevel,
   plugins: [
+    teamsRoutes(store),
+    feedRoutes(store, new WindowLimiter(redis)),
+    errorRoutes(store),
+    serveDashboard(),
     ...(process.env.ADMIN_TOKEN ? [adminRoutes(store, process.env.ADMIN_TOKEN)] : []),
     ...(process.env.LICENSE_SIGNING_SECRET
       ? [

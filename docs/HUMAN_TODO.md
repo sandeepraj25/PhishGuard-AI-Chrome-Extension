@@ -39,6 +39,12 @@ Grouped by urgency. Each item says where the code expects the result.
 - [ ] Email the licence key to customers as a backup to the on-screen pickup (needs your email provider).
 - [ ] Add GitHub secrets for the weekly retrain workflow (`PHISHTANK_APP_KEY`, `OPENPHISH_PREMIUM_URL`, `ADMIN_TOKEN`, repo variable `API_BASE`).
 
+## Phase v4 (Teams, feed API)
+- [ ] Publish the extension to get its Web Store id, then follow `docs/enterprise.md` for force-install + policy.
+- [ ] Decide whether Teams licences go through Paddle (Teams price IDs in `PADDLE_TEAMS_PRICE_IDS`) or invoicing; org creation is currently an admin API call.
+- [ ] Decide who may get threat-feed API keys and on what terms (feed licences in `docs/data_licenses.md` may limit redistribution of domains that came from third-party feeds — the feed API only serves our own CT detections).
+- [ ] Data-protection review for Teams (employee monitoring rules differ by country; India's DPDP Act, GDPR in the EU). Consider leaving `userLabel` empty by default.
+
 ## Legal / policy
 - [ ] Re-check every feed licence in `docs/data_licenses.md`. **Blocking:** OpenPhish community feed is non-commercial; the default Tranco list includes CC BY-NC data; confirm PhishTank allows redistributing a derived Bloom filter.
 - [ ] Have the privacy policy draft (`docs/privacy_policy.md`) reviewed and host it at a public URL (the Web Store requires one).

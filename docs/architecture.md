@@ -166,3 +166,21 @@ flowchart LR
 ### Retraining
 
 `.github/workflows/retrain.yml` (weekly) → `ml/scripts/retrain.py`: train a candidate, evaluate candidate **and** production on the same newest test split, promote only if recall at 0.1% FPR does not drop (and PR-AUC drops ≤ 0.005), open a PR with the new model.
+
+## 10. Phase v4 additions
+
+```mermaid
+flowchart LR
+  POL["Chrome Enterprise policy<br/>orgKey, apiBase"] --> EXT["Extension (managed)"]
+  EXT -- "warning events only<br/>(no URL / domain)" --> TE["/v1/teams/events<br/>seat check"]
+  TE --> WE[("warning_events")]
+  WE --> SUM["/v1/teams/summary<br/>(dashboard token)"] --> DASH["/dashboard (static app)"]
+  CT[("ct_candidates")] --> FEED["/v1/feed/domains<br/>API key + per-key limit"]
+  EXT -- "error code counts" --> ERR["/v1/errors"] --> EC[("error_counts")]
+  ML["drift_report.py (PSI)"] --> DR["ml/results/drift.json"]
+```
+
+- **Teams**: orgs, seat-limited device enrolment (Postgres advisory lock so two devices cannot take the last seat), events table holding only warning metadata. Every enrolled device gets a dashboard row, so "not targeted" is visible too.
+- **Threat-feed API**: newly detected candidate domains from CT discovery, `X-API-Key` (hashed at rest), fixed-window per-key rate limit in Redis.
+- **Monitoring**: PII-free error counters (fixed vocabulary of codes, daily upload) and a PSI drift report on scores and features.
+- Managed install steps: [enterprise.md](enterprise.md).

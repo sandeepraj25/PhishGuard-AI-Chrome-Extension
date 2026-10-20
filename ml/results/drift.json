@@ -1,0 +1,70 @@
+{
+  "script": "ml/scripts/drift_report.py",
+  "generated_at": "2026-10-20T09:13:13+00:00",
+  "git_commit": "e52c63d-dirty",
+  "dataset": "synthetic-sample",
+  "data_file": "ml/data/processed/urls.csv",
+  "data_sha256": "2e474436d5a91b2d",
+  "reference_rows": 20545,
+  "current_rows": 2874,
+  "score_psi": 0.026740003794732056,
+  "score_status": "stable",
+  "flagged_share_reference": 0.2694086152348503,
+  "flagged_share_current": 0.32533054975643705,
+  "feature_psi": {
+    "url_length": 0.016296698937092603,
+    "host_length": 0.035680490514179194,
+    "path_length": 0.01033839894479173,
+    "num_dots_host": 0.0011256844907688564,
+    "num_subdomains": 0.006540750259133941,
+    "num_hyphens_host": 0.03126593083875576,
+    "num_digits_host": 0.01284919240328371,
+    "digit_ratio_url": 0.007043827141676463,
+    "host_entropy": 0.04306961391858638,
+    "url_entropy": 0.024320948824644195,
+    "suspicious_token_count": 0.006069131180596618,
+    "is_risky_tld": 0.0,
+    "tld_length": 0.0018532619846393667,
+    "is_punycode": 0.0,
+    "is_mixed_script": 0.0,
+    "is_ip_host": 0.0,
+    "has_at_symbol": 0.0,
+    "num_path_segments": 0.001028722711818714,
+    "num_query_params": 0.0009613243632153651,
+    "has_nonstandard_port": 0.0,
+    "brand_in_host_not_official": 0.0,
+    "brand_in_path": 0.0,
+    "min_brand_edit_distance": 0.01523424729890233,
+    "homoglyph_brand_match": 0.0,
+    "domain_age_days": 0.00423990420682625,
+    "cert_age_days": 0.001073349676866211
+  },
+  "top_drifting_features": [
+    {
+      "feature": "host_entropy",
+      "psi": 0.04306961391858638,
+      "status": "stable"
+    },
+    {
+      "feature": "host_length",
+      "psi": 0.035680490514179194,
+      "status": "stable"
+    },
+    {
+      "feature": "num_hyphens_host",
+      "psi": 0.03126593083875576,
+      "status": "stable"
+    },
+    {
+      "feature": "url_entropy",
+      "psi": 0.024320948824644195,
+      "status": "stable"
+    },
+    {
+      "feature": "url_length",
+      "psi": 0.016296698937092603,
+      "status": "stable"
+    }
+  ],
+  "summary_line": "score PSI 0.027 (stable) between the training window (20545 URLs) and the newest 30 days (2874 URLs); most drifted feature: host_entropy (PSI 0.043)."
+}

@@ -111,4 +111,38 @@ describe.each(storeFactories)('Store contract (%s)', (_name, make) => {
     expect(await store.takePickup('h'.repeat(64))).toBe('PG1.key');
     expect(await store.takePickup('h'.repeat(64))).toBeNull();
   });
+
+  it('v4: orgs, seat-limited enrolment, events, api keys, error counts', async () => {
+    store = await make();
+    await store.insertOrg({
+      id: 'o1',
+      name: 'Acme',
+      seats: 1,
+      orgKeyHash: 'a'.repeat(64),
+      dashboardTokenHash: 'b'.repeat(64),
+    });
+    expect((await store.orgByKeyHash('a'.repeat(64)))?.id).toBe('o1');
+    expect(await store.enrollDevice('o1', 'd'.repeat(64), 1, 'emp-1')).toBe(true);
+    expect(await store.enrollDevice('o1', 'e'.repeat(64), 1, null)).toBe(false);
+    expect((await store.deviceLabels('o1')).get('d'.repeat(64))).toBe('emp-1');
+    await store.insertWarningEvents([
+      {
+        orgId: 'o1',
+        deviceHash: 'd'.repeat(64),
+        occurredAt: new Date('2026-10-19T00:00:00Z'),
+        band: 'warning',
+        score: 80,
+        brand: 'sbi',
+        reasonIds: ['x'],
+        layers: ['url'],
+        action: 'left',
+      },
+    ]);
+    expect(await store.warningEvents('o1', new Date('2026-10-01T00:00:00Z'))).toHaveLength(1);
+    await store.insertApiKey({ id: 'k1', keyHash: 'c'.repeat(64), name: 'p', requestsPerMin: 5, revoked: false });
+    expect((await store.apiKeyByHash('c'.repeat(64)))?.requestsPerMin).toBe(5);
+    await store.addErrorCounts([{ day: '2026-10-20', component: 'sw', code: 'x', version: '1', count: 2 }]);
+    await store.addErrorCounts([{ day: '2026-10-20', component: 'sw', code: 'x', version: '1', count: 3 }]);
+    expect((await store.errorCounts('2026-10-01'))[0].count).toBe(5);
+  });
 });

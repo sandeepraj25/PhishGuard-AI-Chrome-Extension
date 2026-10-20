@@ -5,6 +5,7 @@
  * is the 4-byte hash-prefix check (api.ts) after a local Bloom-filter hit.
  */
 import { checkPrefix } from './api';
+import { recordError } from './errors';
 import { hashPrefix } from './hash';
 import { OnnxBinaryClassifier } from './model';
 import { presentTokens, topReasons } from './reasons';
@@ -35,6 +36,8 @@ export interface VerdictContext {
   /** Probability from Layers 2-3; combined as max with Layer 1. */
   extraProb?: number | null;
   layers?: string[];
+  /** Brand recognised by Layers 2-3 (overrides the URL match for the verdict's brand field). */
+  brand?: string;
 }
 
 export class Engine {
@@ -60,6 +63,7 @@ export class Engine {
         model = await OnnxBinaryClassifier.load(a.onnx, NUM_URL_FEATURES);
       } catch (e) {
         console.warn('[phishguard] URL model failed to load, falling back to rules', e);
+        await recordError('url_model_load_failed');
       }
     }
     return new Engine(fx, model, a.trees, a.modelVersion, a.shared.suspiciousTokens);
@@ -137,6 +141,7 @@ export class Engine {
       trusted: ctx.trusted,
       source: knownBad === 'confirmed' ? 'known-bad' : this.model ? 'model' : 'rules',
       layers: ctx.layers ?? ['url'],
+      brand: ctx.brand ?? details.brand,
       modelVersion: this.modelVersion,
       computedAt: Date.now(),
     };

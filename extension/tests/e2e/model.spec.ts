@@ -14,11 +14,14 @@ test('service worker scores with the ONNX model (not the rules fallback) and giv
   for (const [url, band] of CASES) {
     await page.goto(url);
     await page.click('#pass');
-    await page.waitForTimeout(600);
-    const v = await sw.evaluate(async (u) => {
-      const all = (await chrome.storage.session.get(null)) as Record<string, { url: string }>;
-      return Object.values(all).find((x) => x.url === u);
-    }, url);
+    // Poll instead of sleeping: wait until the password-moment verdict (not the navigation one) is stored.
+    const read = () =>
+      sw.evaluate(async (u) => {
+        const all = (await chrome.storage.session.get(null)) as Record<string, { url: string; computedAt: number }>;
+        return Object.values(all).find((x) => x?.url === u);
+      }, url);
+    await expect.poll(async () => (await read())?.url, { timeout: 15_000 }).toBe(url);
+    const v = await read();
     const verdict = v as unknown as {
       source: string;
       band: string;

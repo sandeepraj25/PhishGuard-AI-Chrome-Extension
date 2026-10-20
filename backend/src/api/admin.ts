@@ -3,7 +3,7 @@
  * Reports flow: extension "Report mistake" -> /v1/report (pending) -> reviewer confirms/rejects here
  * -> /v1/admin/reports/export?status=confirmed -> ml/scripts/import_reviews.py -> retraining data.
  */
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -88,6 +88,49 @@ export function adminRoutes(store: Store, token: string) {
     app.get('/v1/admin/ct-candidates', async (req) =>
       store.listCtCandidates(Math.min(1000, Number((req.query as { limit?: string }).limit ?? 100))),
     );
+
+    // ---- v4: organisations, API keys, error counters ----
+    app.post('/v1/admin/orgs', async (req, reply) => {
+      const b = z
+        .object({ name: z.string().min(1).max(100), seats: z.number().int().min(1).max(100_000) })
+        .safeParse(req.body);
+      if (!b.success) return reply.code(400).send({ error: b.error.issues[0].message });
+      const id = randomBytes(8).toString('hex');
+      const orgKey = `org_${randomBytes(24).toString('base64url')}`;
+      const dashboardToken = `dash_${randomBytes(24).toString('base64url')}`;
+      const h = (s: string) => createHash('sha256').update(s).digest('hex');
+      await store.insertOrg({
+        id,
+        name: b.data.name,
+        seats: b.data.seats,
+        orgKeyHash: h(orgKey),
+        dashboardTokenHash: h(dashboardToken),
+      });
+      // Secrets are returned exactly once; only hashes are stored.
+      return reply.code(201).send({ orgId: id, orgKey, dashboardToken });
+    });
+
+    app.post('/v1/admin/api-keys', async (req, reply) => {
+      const b = z
+        .object({ name: z.string().min(1).max(100), requestsPerMin: z.number().int().min(1).max(10_000).default(60) })
+        .safeParse(req.body);
+      if (!b.success) return reply.code(400).send({ error: b.error.issues[0].message });
+      const key = `pgk_${randomBytes(24).toString('base64url')}`;
+      const id = randomBytes(8).toString('hex');
+      await store.insertApiKey({
+        id,
+        keyHash: createHash('sha256').update(key).digest('hex'),
+        name: b.data.name,
+        requestsPerMin: b.data.requestsPerMin,
+        revoked: false,
+      });
+      return reply.code(201).send({ id, key });
+    });
+
+    app.get('/v1/admin/errors', async (req) => {
+      const days = Math.min(90, Number((req.query as { days?: string }).days ?? 7));
+      return store.errorCounts(new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10));
+    });
 
     app.get('/v1/admin/leadtime.csv', async (_req, reply) => {
       reply.type('text/csv');

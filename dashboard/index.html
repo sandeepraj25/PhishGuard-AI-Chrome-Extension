@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PhishGuard Teams</title>
+  </head>
+  <body>
+    <main id="app">
+      <section id="signin" class="signin" hidden>
+        <h1>PhishGuard Teams</h1>
+        <p>Paste the dashboard token you received when your organisation was created.</p>
+        <form id="signin-form">
+          <label for="token">Dashboard token</label>
+          <input id="token" type="password" autocomplete="off" spellcheck="false" required />
+          <button type="submit">Open dashboard</button>
+          <p id="signin-error" class="error" role="alert"></p>
+        </form>
+      </section>
+      <section id="board" hidden>
+        <header class="top">
+          <div>
+            <h1 id="org-name"></h1>
+            <p id="range" class="muted"></p>
+          </div>
+          <button id="signout" type="button" class="quiet">Sign out</button>
+        </header>
+        <p id="headline" class="headline"></p>
+        <div class="layout">
+          <section aria-labelledby="heat-title" class="heat">
+            <h2 id="heat-title">Warnings per person, by week</h2>
+            <div class="heat-scroll"><table id="heatmap"></table></div>
+            <p class="legend" aria-hidden="true"><span>fewer</span><i class="h0"></i><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i><span>more</span></p>
+          </section>
+          <aside class="side">
+            <section aria-labelledby="brands-title">
+              <h2 id="brands-title">Brands being imitated</h2>
+              <ol id="brands" class="bars"></ol>
+            </section>
+            <section aria-labelledby="actions-title">
+              <h2 id="actions-title">What people did</h2>
+              <div id="actions" class="stack" role="img"></div>
+              <ul id="actions-legend" class="keys"></ul>
+            </section>
+          </aside>
+        </div>
+        <footer class="muted">
+          Only warning events are collected: when, how risky, which brand was imitated and what the person chose.
+          No browsing history and no addresses of the sites people visit.
+        </footer>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

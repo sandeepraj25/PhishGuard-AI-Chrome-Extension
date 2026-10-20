@@ -40,10 +40,17 @@ async function onSensitive(field: HTMLInputElement): Promise<void> {
     showOverlay(
       v,
       {
-        onLeave: () => void send({ type: 'leaveSite' }),
-        onTrust: () => void send({ type: 'trustSite', domain: v.registeredDomain }),
-        onDismiss: () => undefined,
+        onLeave: () => {
+          void send({ type: 'warningOutcome', verdict: v, action: 'left' });
+          void send({ type: 'leaveSite' });
+        },
+        onTrust: () => {
+          void send({ type: 'warningOutcome', verdict: v, action: 'trusted' });
+          void send({ type: 'trustSite', domain: v.registeredDomain });
+        },
+        onDismiss: () => void send({ type: 'warningOutcome', verdict: v, action: 'dismissed' }),
         onReport: async () => {
+          void send({ type: 'warningOutcome', verdict: v, action: 'reported' });
           const res = await send<{ sent: boolean; reason?: string }>({ type: 'reportMistake', verdict: v });
           return res?.sent ? 'Thanks — your report was sent.' : `Not sent: ${res?.reason ?? 'server unavailable'}`;
         },

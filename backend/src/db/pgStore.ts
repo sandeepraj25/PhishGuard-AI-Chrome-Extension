@@ -4,7 +4,10 @@ import type {
   BloomVersion,
   CrawlResult,
   CtCandidate,
+  ApiKeyRow,
   KnownBadRow,
+  OrgRow,
+  WarningEvent,
   LicenseRow,
   RdapEntry,
   ReportInput,
@@ -324,6 +327,152 @@ export class PgStore implements Store {
       [h],
     );
     return r.rows[0]?.license_key ?? null;
+  }
+
+  private static toOrg(x: Record<string, unknown>): OrgRow {
+    return {
+      id: x.id as string,
+      name: x.name as string,
+      seats: x.seats as number,
+      orgKeyHash: x.org_key_hash as string,
+      dashboardTokenHash: x.dashboard_token_hash as string,
+    };
+  }
+
+  async insertOrg(o: OrgRow) {
+    await this.pool.query(
+      'INSERT INTO orgs (id, name, seats, org_key_hash, dashboard_token_hash) VALUES ($1, $2, $3, $4, $5)',
+      [o.id, o.name, o.seats, o.orgKeyHash, o.dashboardTokenHash],
+    );
+  }
+
+  async orgByKeyHash(h: string) {
+    const r = await this.pool.query('SELECT * FROM orgs WHERE org_key_hash = $1', [h]);
+    return r.rows[0] ? PgStore.toOrg(r.rows[0]) : null;
+  }
+
+  async orgByDashboardHash(h: string) {
+    const r = await this.pool.query('SELECT * FROM orgs WHERE dashboard_token_hash = $1', [h]);
+    return r.rows[0] ? PgStore.toOrg(r.rows[0]) : null;
+  }
+
+  async enrollDevice(orgId: string, deviceHash: string, seats: number, label: string | null) {
+    // Serialise enrolments per org with an advisory lock so two devices cannot take the last seat.
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [orgId]);
+      const exists = await client.query('SELECT 1 FROM org_devices WHERE org_id = $1 AND device_hash = $2', [
+        orgId,
+        deviceHash,
+      ]);
+      if (exists.rowCount) {
+        await client.query('COMMIT');
+        return true;
+      }
+      const n = await client.query<{ n: string }>('SELECT count(*) AS n FROM org_devices WHERE org_id = $1', [orgId]);
+      if (Number(n.rows[0].n) >= seats) {
+        await client.query('COMMIT');
+        return false;
+      }
+      await client.query('INSERT INTO org_devices (org_id, device_hash, label) VALUES ($1, $2, $3)', [
+        orgId,
+        deviceHash,
+        label,
+      ]);
+      await client.query('COMMIT');
+      return true;
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deviceLabels(orgId: string) {
+    const r = await this.pool.query<{ device_hash: string; label: string | null }>(
+      'SELECT device_hash, label FROM org_devices WHERE org_id = $1',
+      [orgId],
+    );
+    return new Map(r.rows.map((x) => [x.device_hash, x.label]));
+  }
+
+  async insertWarningEvents(events: WarningEvent[]) {
+    for (const e of events) {
+      await this.pool.query(
+        `INSERT INTO warning_events (org_id, device_hash, occurred_at, band, score, brand, reason_ids, layers, action)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [e.orgId, e.deviceHash, e.occurredAt, e.band, e.score, e.brand, e.reasonIds, e.layers, e.action],
+      );
+    }
+  }
+
+  async warningEvents(orgId: string, since: Date): Promise<WarningEvent[]> {
+    const r = await this.pool.query(
+      'SELECT * FROM warning_events WHERE org_id = $1 AND occurred_at >= $2 ORDER BY occurred_at',
+      [orgId, since],
+    );
+    return r.rows.map((x) => ({
+      orgId: x.org_id,
+      deviceHash: x.device_hash,
+      occurredAt: x.occurred_at,
+      band: x.band,
+      score: x.score,
+      brand: x.brand,
+      reasonIds: x.reason_ids,
+      layers: x.layers,
+      action: x.action,
+    }));
+  }
+
+  async insertApiKey(k: ApiKeyRow) {
+    await this.pool.query(
+      'INSERT INTO api_keys (id, key_hash, name, requests_per_min, revoked) VALUES ($1, $2, $3, $4, $5)',
+      [k.id, k.keyHash, k.name, k.requestsPerMin, k.revoked],
+    );
+  }
+
+  async apiKeyByHash(h: string): Promise<ApiKeyRow | null> {
+    const r = await this.pool.query('SELECT * FROM api_keys WHERE key_hash = $1', [h]);
+    const x = r.rows[0];
+    return x
+      ? { id: x.id, keyHash: x.key_hash, name: x.name, requestsPerMin: x.requests_per_min, revoked: x.revoked }
+      : null;
+  }
+
+  async newDetections(since: Date, limit: number) {
+    const r = await this.pool.query(
+      `SELECT c.domain, c.first_seen, c.brand, c.signal, (k.domain IS NOT NULL) AS listed
+       FROM ct_candidates c LEFT JOIN known_bad_domains k ON k.domain = c.domain
+       WHERE c.first_seen >= $1 AND c.verdict <> 'legit' ORDER BY c.first_seen LIMIT $2`,
+      [since, limit],
+    );
+    return r.rows.map((x) => ({
+      domain: x.domain,
+      firstSeen: x.first_seen,
+      brand: x.brand,
+      signal: x.signal,
+      listed: x.listed,
+    }));
+  }
+
+  async addErrorCounts(rows: { day: string; component: string; code: string; version: string; count: number }[]) {
+    for (const x of rows) {
+      await this.pool.query(
+        `INSERT INTO error_counts (day, component, code, version, count) VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (day, component, code, version) DO UPDATE SET count = error_counts.count + EXCLUDED.count`,
+        [x.day, x.component, x.code, x.version, x.count],
+      );
+    }
+  }
+
+  async errorCounts(sinceDay: string) {
+    const r = await this.pool.query(
+      "SELECT to_char(day, 'YYYY-MM-DD') AS day, component, code, version, count FROM error_counts WHERE day >= $1 ORDER BY day",
+      [sinceDay],
+    );
+    return r.rows as { day: string; component: string; code: string; version: string; count: number }[];
   }
 
   async close() {

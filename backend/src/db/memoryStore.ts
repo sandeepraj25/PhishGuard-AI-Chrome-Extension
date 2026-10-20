@@ -2,7 +2,10 @@ import type {
   BloomVersion,
   CrawlResult,
   CtCandidate,
+  ApiKeyRow,
   KnownBadRow,
+  OrgRow,
+  WarningEvent,
   LicenseRow,
   RdapEntry,
   ReportInput,
@@ -22,6 +25,11 @@ export class MemoryStore implements Store {
   private crawlRes = new Map<string, CrawlResult>();
   private licenses = new Map<string, LicenseRow>();
   private pickups = new Map<string, string>();
+  private orgs = new Map<string, OrgRow>();
+  private devices = new Map<string, Map<string, string | null>>();
+  private events: WarningEvent[] = [];
+  private apiKeys = new Map<string, ApiKeyRow>();
+  private errors = new Map<string, number>();
 
   async upsertKnownBad(domain: string, fullHash: string, source: string, at: Date) {
     const key = `${domain}\0${source}`;
@@ -162,6 +170,65 @@ export class MemoryStore implements Store {
     const k = this.pickups.get(h) ?? null;
     this.pickups.delete(h);
     return k;
+  }
+  async insertOrg(o: OrgRow) {
+    this.orgs.set(o.id, { ...o });
+  }
+  async orgByKeyHash(h: string) {
+    return [...this.orgs.values()].find((o) => o.orgKeyHash === h) ?? null;
+  }
+  async orgByDashboardHash(h: string) {
+    return [...this.orgs.values()].find((o) => o.dashboardTokenHash === h) ?? null;
+  }
+  async enrollDevice(orgId: string, deviceHash: string, seats: number, label: string | null) {
+    const m = this.devices.get(orgId) ?? new Map<string, string | null>();
+    this.devices.set(orgId, m);
+    if (m.has(deviceHash)) return true;
+    if (m.size >= seats) return false;
+    m.set(deviceHash, label);
+    return true;
+  }
+  async deviceLabels(orgId: string) {
+    return new Map(this.devices.get(orgId) ?? []);
+  }
+  async insertWarningEvents(events: WarningEvent[]) {
+    this.events.push(...events.map((e) => ({ ...e })));
+  }
+  async warningEvents(orgId: string, since: Date) {
+    return this.events.filter((e) => e.orgId === orgId && e.occurredAt >= since);
+  }
+  async insertApiKey(k: ApiKeyRow) {
+    this.apiKeys.set(k.keyHash, { ...k });
+  }
+  async apiKeyByHash(h: string) {
+    return this.apiKeys.get(h) ?? null;
+  }
+  async newDetections(since: Date, limit: number) {
+    return [...this.ct.values()]
+      .filter((c) => c.firstSeen >= since && c.verdict !== 'legit')
+      .sort((a, b) => a.firstSeen.getTime() - b.firstSeen.getTime())
+      .slice(0, limit)
+      .map((c) => ({
+        domain: c.domain,
+        firstSeen: c.firstSeen,
+        brand: c.brand,
+        signal: c.signal,
+        listed: this.bad.has(c.domain),
+      }));
+  }
+  async addErrorCounts(rows: { day: string; component: string; code: string; version: string; count: number }[]) {
+    for (const r of rows) {
+      const k = [r.day, r.component, r.code, r.version].join('\0');
+      this.errors.set(k, (this.errors.get(k) ?? 0) + r.count);
+    }
+  }
+  async errorCounts(sinceDay: string) {
+    return [...this.errors.entries()]
+      .map(([k, count]) => {
+        const [day, component, code, version] = k.split('\0');
+        return { day, component, code, version, count };
+      })
+      .filter((r) => r.day >= sinceDay);
   }
   async close() {}
 }

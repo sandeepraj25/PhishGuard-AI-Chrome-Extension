@@ -74,6 +74,34 @@ export interface LicenseRow {
   orgId: string | null;
 }
 
+export interface OrgRow {
+  id: string;
+  name: string;
+  seats: number;
+  orgKeyHash: string;
+  dashboardTokenHash: string;
+}
+
+export interface WarningEvent {
+  orgId: string;
+  deviceHash: string;
+  occurredAt: Date;
+  band: 'caution' | 'warning' | 'blocked';
+  score: number;
+  brand: string | null;
+  reasonIds: string[];
+  layers: string[];
+  action: string | null;
+}
+
+export interface ApiKeyRow {
+  id: string;
+  keyHash: string;
+  name: string;
+  requestsPerMin: number;
+  revoked: boolean;
+}
+
 export interface Store {
   upsertKnownBad(domain: string, fullHash: string, source: string, seenAt: Date): Promise<'inserted' | 'updated'>;
   hashesForPrefix(prefix: string): Promise<string[]>;
@@ -110,6 +138,28 @@ export interface Store {
   licenseBySubscription(subscriptionId: string): Promise<LicenseRow | null>;
   savePickup(claimTokenHash: string, key: string): Promise<void>;
   takePickup(claimTokenHash: string): Promise<string | null>;
+
+  // v4: Teams, feed API, monitoring
+  insertOrg(o: OrgRow): Promise<void>;
+  orgByKeyHash(h: string): Promise<OrgRow | null>;
+  orgByDashboardHash(h: string): Promise<OrgRow | null>;
+  /** Registers a device; returns false if the org has no free seat left. */
+  enrollDevice(orgId: string, deviceHash: string, seats: number, label: string | null): Promise<boolean>;
+  deviceLabels(orgId: string): Promise<Map<string, string | null>>;
+  insertWarningEvents(events: WarningEvent[]): Promise<void>;
+  warningEvents(orgId: string, since: Date): Promise<WarningEvent[]>;
+  insertApiKey(k: ApiKeyRow): Promise<void>;
+  apiKeyByHash(h: string): Promise<ApiKeyRow | null>;
+  newDetections(
+    since: Date,
+    limit: number,
+  ): Promise<{ domain: string; firstSeen: Date; brand: string; signal: string; listed: boolean }[]>;
+  addErrorCounts(
+    rows: { day: string; component: string; code: string; version: string; count: number }[],
+  ): Promise<void>;
+  errorCounts(
+    sinceDay: string,
+  ): Promise<{ day: string; component: string; code: string; version: string; count: number }[]>;
   latestBloom(): Promise<BloomVersion | null>;
 
   close(): Promise<void>;

@@ -24,6 +24,7 @@ export interface Verdict {
   trusted: boolean;
   source: 'model' | 'rules' | 'known-bad';
   layers: string[]; // which layers contributed, e.g. ["url", "page"]
+  brand: string; // impersonated brand id ('' if none) — the only brand data Teams events carry
   modelVersion: string;
   computedAt: number;
 }
@@ -43,7 +44,8 @@ export type Message =
   | { type: 'getSettings' }
   | { type: 'setSettings'; settings: Partial<Settings> }
   | { type: 'activateLicense'; key: string }
-  | { type: 'deactivateLicense' };
+  | { type: 'deactivateLicense' }
+  | { type: 'warningOutcome'; verdict: Verdict; action: 'left' | 'trusted' | 'dismissed' | 'reported' };
 
 /** Where the focused form is on screen (CSS px), for the Layer 3 "login area" crop. */
 export interface FormGeometry {

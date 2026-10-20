@@ -15,6 +15,9 @@ import { domainAgeDays } from '../lib/rdap';
 import * as store from '../lib/storage';
 import type { FormGeometry, Message, PageSignals, Reason, Verdict } from '../lib/types';
 import { applyValidation, isPro, validateLicense } from '../lib/license';
+import { flushErrors, recordError } from '../lib/errors';
+import { getManaged } from '../lib/managed';
+import { enqueue, flush as flushTeams, toEvent } from '../lib/teams';
 import { loadEngineAssets } from './assets';
 import { scorePage, scoreVisual } from './offscreen';
 
@@ -25,7 +28,10 @@ let enginePromise: Promise<Engine> | null = null;
 function engine(): Promise<Engine> {
   if (!enginePromise) {
     enginePromise = (async () => Engine.create(await loadEngineAssets(await store.getStoredBloom())))();
-    enginePromise.catch(() => (enginePromise = null)); // retry on next use
+    enginePromise.catch(() => {
+      enginePromise = null; // retry on next use
+      void recordError('engine_load_failed');
+    });
   }
   return enginePromise;
 }
@@ -33,7 +39,7 @@ function engine(): Promise<Engine> {
 const isWeb = (u?: string): u is string => !!u && /^https?:\/\//i.test(u);
 
 /** Layers 2-3 are Pro features (free tier: Layer 1 + Password Guard + reasons + regional brands). */
-const layer2Enabled = (s: Parameters<typeof isPro>[0]): boolean => isPro(s);
+const layer2Enabled = (s: Parameters<typeof isPro>[0] & { managed?: boolean }): boolean => !!s.managed || isPro(s);
 
 interface VerdictOptions {
   sensitive?: boolean;
@@ -43,9 +49,16 @@ interface VerdictOptions {
   windowId?: number;
 }
 
+/** User settings with enterprise policy applied on top (policy wins). */
+async function effectiveSettings() {
+  const s = await store.getSettings();
+  const m = await getManaged();
+  return m ? { ...s, apiBase: m.apiBase, managed: true } : { ...s, managed: false };
+}
+
 async function computeVerdict(url: string, opts: VerdictOptions = {}): Promise<Verdict> {
   const eng = await engine();
-  const settings = await store.getSettings();
+  const settings = await effectiveSettings();
   const domain = eng.registeredDomain(url);
   const domainHash = await sha256Hex(domain);
   const trusted = (await store.getTrusted()).includes(domain);
@@ -63,16 +76,18 @@ async function computeVerdict(url: string, opts: VerdictOptions = {}): Promise<V
     extraReasons: page?.reasons ?? [],
     extraFloor: page?.floor ?? 0,
     layers: page ? ['url', 'page'] : ['url'],
+    brand: page?.details.brandInTitle || undefined,
   };
   let v = await eng.verdict(url, ctx);
   // Layer 3 (visual) only when Layers 1-2 are unsure, the user is Pro, and we can see the form.
   const grey = v.score >= VISUAL_GREY_LO && v.score <= VISUAL_GREY_HI && v.knownBad === 'no' && !trusted;
   if (grey && opts.sensitive && opts.form && opts.windowId !== undefined && layer2Enabled(settings)) {
-    const visualReason = await lookAlike(domain, opts.form, opts.windowId);
-    if (visualReason) {
+    const visual = await lookAlike(domain, opts.form, opts.windowId);
+    if (visual) {
       v = await eng.verdict(url, {
         ...ctx,
-        extraReasons: [...ctx.extraReasons, visualReason],
+        brand: visual.brand,
+        extraReasons: [...ctx.extraReasons, visual.reason],
         extraFloor: Math.max(ctx.extraFloor, VISUAL_FLOOR),
         layers: [...ctx.layers, 'visual'],
       });
@@ -85,12 +100,17 @@ async function computeVerdict(url: string, opts: VerdictOptions = {}): Promise<V
 }
 
 /** Screenshot the visible tab and ask the visual model whether the login area imitates a brand. */
-async function lookAlike(domain: string, form: FormGeometry, windowId: number): Promise<Reason | null> {
+async function lookAlike(
+  domain: string,
+  form: FormGeometry,
+  windowId: number,
+): Promise<{ reason: Reason; brand: string } | null> {
   let pngDataUrl: string;
   try {
     pngDataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
   } catch (e) {
     await chrome.storage.session.set({ lastVisual: { error: String(e) } });
+    await recordError('capture_failed');
     return null; // tab not visible / capture not allowed: fail open
   }
   const r = await scoreVisual({ pngDataUrl, form: form.rect, viewport: form.viewport, dpr: form.dpr });
@@ -98,11 +118,15 @@ async function lookAlike(domain: string, form: FormGeometry, windowId: number): 
   await chrome.storage.session.set({
     lastVisual: r ? { brand: r.brand, confidence: r.confidence, match: r.match, latencyMs: r.latencyMs } : null,
   });
+  if (!r) await recordError('visual_score_failed');
   if (!r?.match || r.officialDomains.includes(domain)) return null;
   return {
-    id: 'visual_brand_lookalike',
-    text: `Looks like ${r.brandName}'s sign-in page, but this site is not ${r.officialDomains[0]}`,
-    weight: 50 + r.confidence, // concrete evidence: rank above model-only reasons
+    brand: r.brand,
+    reason: {
+      id: 'visual_brand_lookalike',
+      text: `Looks like ${r.brandName}'s sign-in page, but this site is not ${r.officialDomains[0]}`,
+      weight: 50 + r.confidence, // concrete evidence: rank above model-only reasons
+    },
   };
 }
 
@@ -121,12 +145,14 @@ async function scoreTab(tabId: number, url: string): Promise<void> {
         `src/block/block.html?u=${encodeURIComponent(url)}&d=${encodeURIComponent(v.registeredDomain)}`,
       );
       await chrome.tabs.update(tabId, { url: block });
+      await teamsEvent(v, null, true);
       return;
     }
     await store.setTabVerdict(tabId, v);
     await updateBadge(tabId, v);
   } catch (e) {
     console.error('[phishguard] scoring failed', e);
+    await recordError('scoring_failed');
   }
 }
 
@@ -146,6 +172,7 @@ async function refreshBloom(): Promise<void> {
     (await engine()).fx.loadBloom(res.bytes);
   } catch (e) {
     console.warn('[phishguard] bloom refresh failed', e);
+    await recordError('bloom_refresh_failed');
   }
 }
 
@@ -159,13 +186,27 @@ async function refreshLicense(): Promise<void> {
   }
 }
 
+/** Teams mode only (managed policy): queue a warning event and try to send it. */
+async function teamsEvent(v: Verdict, action: Parameters<typeof toEvent>[1], blocked = false): Promise<void> {
+  const m = await getManaged();
+  if (!m) return;
+  await enqueue(toEvent(v, action, blocked));
+  await flushTeams(m).catch(() => recordError('teams_upload_failed'));
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   void chrome.alarms.create('bloom-refresh', { periodInMinutes: 15, delayInMinutes: 1 });
   void chrome.alarms.create('license-refresh', { periodInMinutes: 24 * 60, delayInMinutes: 5 });
+  void chrome.alarms.create('teams-flush', { periodInMinutes: 5 });
+  void chrome.alarms.create('errors-flush', { periodInMinutes: 24 * 60, delayInMinutes: 60 });
 });
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === 'bloom-refresh') void refreshBloom();
   if (a.name === 'license-refresh') void refreshLicense();
+  if (a.name === 'teams-flush')
+    void getManaged().then((m) => m && flushTeams(m).catch(() => recordError('teams_upload_failed')));
+  if (a.name === 'errors-flush')
+    void effectiveSettings().then((s) => flushErrors(s.apiBase, EXTENSION_VERSION).catch(() => undefined));
 });
 
 async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promise<unknown> {
@@ -234,8 +275,11 @@ async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promi
     }
     case 'deactivateLicense':
       return store.setSettings({ plan: 'free', licenseKey: '', licenseExpiresAt: '', licenseCheckedAt: 0 });
+    case 'warningOutcome':
+      await teamsEvent(msg.verdict, msg.action);
+      return true;
     case 'getSettings':
-      return store.getSettings();
+      return effectiveSettings();
     case 'setSettings':
       return store.setSettings(msg.settings);
     default:

@@ -3,9 +3,9 @@ PY ?= python3
 PG_TEST_DB ?= postgres://postgres@127.0.0.1:55432/phishguard_test
 PG_TEST_REDIS ?= redis://127.0.0.1:56379/1
 
-.PHONY: all shared wasm wasm-test wasm-emscripten data train eval parity bloom pages leadtime visual robustness ext ext-test e2e backend-test ml-test readme test lint
+.PHONY: all shared wasm wasm-test wasm-emscripten data train eval parity bloom pages leadtime visual robustness drift dashboard ext ext-test e2e backend-test ml-test readme test lint
 
-all: shared wasm data train eval bloom parity pages leadtime visual robustness ext test readme
+all: shared wasm data train eval bloom parity pages leadtime visual robustness drift dashboard ext test readme
 
 shared:            ## regenerate derived shared data (PSL ASCII + confusables)
 	$(PY) ml/scripts/build_psl.py
@@ -51,6 +51,12 @@ visual:            ## Layer 3: fictional-brand pages -> Playwright render + TS c
 robustness:
 	$(PY) ml/scripts/eval_robustness.py
 
+drift:
+	$(PY) ml/scripts/drift_report.py
+
+dashboard:
+	cd dashboard && npm run build
+
 retrain:           ## candidate model + promotion gate (weekly in CI)
 	$(PY) ml/scripts/retrain.py
 
@@ -77,6 +83,7 @@ backend-test:
 lint:
 	cd extension && npx eslint src tests scripts && npx prettier --check . && npx tsc --noEmit
 	cd backend && npx eslint src tests && npx prettier --check . && npx tsc --noEmit
+	cd dashboard && npx tsc --noEmit
 
 test: ml-test ext-test backend-test e2e lint
 

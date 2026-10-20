@@ -37,7 +37,7 @@ flowchart LR
   ML["ml/: data → features (Python mirror of C++) →<br/>LightGBM → ONNX + tree JSON (TreeSHAP)"] -. "bundled model files" .-> Browser
 ```
 
-More detail: [docs/architecture.md](docs/architecture.md) · Privacy: [docs/privacy.md](docs/privacy.md) · Permissions: [docs/permissions.md](docs/permissions.md)
+More detail: [architecture](docs/architecture.md), [privacy](docs/privacy.md), [permissions](docs/permissions.md), [enterprise install](docs/enterprise.md), [interview notes](docs/interview_notes.md).
 
 ## Results
 
@@ -59,6 +59,7 @@ Layer 2 page model: PR-AUC 1.000, recall@0.1%FPR 99.3% (≤0 FP of 401) on 1001 
 Lead time vs public feeds: median 3.0 h ahead of the earliest public feed (p25 0.6 h, p90 11.7 h); 77% of 354 domains seen before any feed (synthetic-sample). Source: `ml/results/leadtime.json`.
 Layer 3 visual model: int8 model 887 KB (fp32 2390 KB), CPU latency p50 1.1 ms; test clone detection 55.6% at 1.6% false matches on generic pages (rule 'proto', fictional-brand synthetic data). Source: `ml/results/visual_eval.json`.
 Robustness (scripted attacks): worst attack for the shipped score: evasion_clean (recall at score > 60 99.4% → 93.6%) on 3252 synthetic-sample phishing URLs; full table in the JSON. Source: `ml/results/robustness.json`.
+Score drift: score PSI 0.027 (stable) between the training window (20545 URLs) and the newest 30 days (2874 URLs); most drifted feature: host_entropy (PSI 0.043). Source: `ml/results/drift.json`.
 <!-- RESULTS:END -->
 
 ## Repository layout
@@ -69,7 +70,7 @@ Robustness (scripted attacks): worst attack for the shipped score: evasion_clean
 | `wasm/` | C++17 feature extractor → WebAssembly; GoogleTest unit tests |
 | `ml/` | Python: data scripts, features (bit-exact mirror of the C++), training, evaluation, ONNX export |
 | `backend/` | Fastify API + workers (feeds, Bloom, RDAP, CT logs), Postgres, Redis |
-| `dashboard/` | Teams admin dashboard (phase v4) |
+| `dashboard/` | Teams admin dashboard (served by the backend at `/dashboard/`) |
 | `shared/` | Data shared by every component: brands, PSL, confusables, tokens, feature spec, shared TS loader |
 | `docs/` | Architecture, privacy, permissions, licences, interview notes, HUMAN_TODO, store listing |
 
@@ -97,6 +98,14 @@ python ml/scripts/download_openphish.py          # check licence first: docs/dat
 PHISHTANK_APP_KEY=... python ml/scripts/download_phishtank.py
 python ml/scripts/clean_dedupe.py
 python ml/scripts/train_url.py --host-only && python ml/scripts/eval_url.py --host-only   # see "leakage" in docs/interview_notes.md
+```
+
+Teams dashboard (demo data):
+
+```bash
+make dashboard
+DATABASE_URL=postgres://… npm --prefix backend run seed:demo    # prints a demo dashboard token
+# open http://localhost:8787/dashboard/ and paste the token. Managed install: docs/enterprise.md
 ```
 
 Backend:

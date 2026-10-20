@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "orgKey": { "title": "Organisation key", "description": "Enrols this browser in your PhishGuard Teams organisation (from POST /v1/admin/orgs).", "type": "string" },
+    "apiBase": { "title": "PhishGuard server URL", "description": "e.g. https://api.phishguard.example", "type": "string" },
+    "userLabel": { "title": "User label", "description": "Optional label shown on the dashboard instead of a device code, e.g. an employee id. Leave empty for pseudonymous devices.", "type": "string" },
+    "reportActions": { "title": "Report what users chose", "description": "Include the user's choice (left / continued / trusted / reported) in warning events.", "type": "boolean" }
+  }
+}

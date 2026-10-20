@@ -1,6 +1,6 @@
 # PhishGuard AI — Build Plan
 
-**Status:** v1, v2 and v3 complete (see section 6).
+**Status:** all four phases complete (see section 6).
 
 This file is the working plan. It is updated at the end of every phase.
 
@@ -94,12 +94,12 @@ phishguard-ai/
 - [x] e2e visual look-alike fixture; commit "phase v3 complete"
 
 ### v4 — Scale
-- [ ] Orgs, seats, warning-event ingestion (no URLs, no history)
-- [ ] Admin dashboard with seeded demo data
-- [ ] Enterprise managed-install docs (ExtensionInstallForcelist + managed storage schema)
-- [ ] Threat-feed API with API keys + rate limits
-- [ ] Score-drift report + PII-free error logging
-- [ ] commit "phase v4 complete"
+- [x] Orgs, seats, warning-event ingestion (no URLs, no history)
+- [x] Admin dashboard with seeded demo data
+- [x] Enterprise managed-install docs (ExtensionInstallForcelist + managed storage schema)
+- [x] Threat-feed API with API keys + rate limits
+- [x] Score-drift report + PII-free error logging
+- [x] commit "phase v4 complete"
 
 ## 3. Key design decisions (made now, can be changed)
 
@@ -168,3 +168,9 @@ phishguard-ai/
 - Pro plan: signed licence keys, Paddle webhook (HMAC, replay window), one-time key pickup, region tiers, popup activation, daily revalidation with 14-day offline grace; Layers 2–3 gated.
 - Weekly retrain with promotion gate (`ml/scripts/retrain.py`, `.github/workflows/retrain.yml`).
 - Decision changes: host permission is now `<all_urls>` (needed by `captureVisibleTab`); decision 6 applied (from-scratch visual model).
+
+### v4 — complete
+- Teams: orgs, seat-limited enrolment, warning-event ingestion (schema-enforced, no URLs), summary API, static admin dashboard (heatmap per person per week, imitated brands, user outcomes) with seeded demo data.
+- Managed install: `chrome.storage.managed` schema, policy-driven org key + server; tested end to end through Chromium's Linux policy directory. Steps in `docs/enterprise.md`.
+- Threat-feed API with hashed API keys and per-key rate limits.
+- Monitoring: PII-free error counters (extension → `/v1/errors`), PSI drift report (`ml/results/drift.json`).

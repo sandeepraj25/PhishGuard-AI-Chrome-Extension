@@ -41,3 +41,16 @@ def test_rules_and_floor():
     assert combined_score(0.01, f) == 75.0
     clean, _ = e.extract("https://www.examplebank.test/")
     assert rules_score(clean) == 0.0
+
+
+def test_psi_basics():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    from drift_report import psi, status
+    rng = np.random.default_rng(0)
+    a = rng.normal(0, 1, 5000)
+    assert psi(a, rng.normal(0, 1, 5000)) < 0.05
+    assert psi(a, rng.normal(1.5, 1, 5000)) > 0.25
+    assert status(0.05) == "stable" and status(0.3) == "investigate"
+    assert psi(np.zeros(100), np.zeros(50)) == 0.0
