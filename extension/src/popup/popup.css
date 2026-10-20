@@ -1,0 +1,132 @@
+:root {
+  --bg: #fff;
+  --fg: #101828;
+  --muted: #475467;
+  --line: #eaecf0;
+  --safe: #079455;
+  --caution: #dc6803;
+  --warning: #d92d20;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101828;
+    --fg: #f2f4f7;
+    --muted: #98a2b3;
+    --line: #344054;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  width: 340px;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    14px/1.45 system-ui,
+    sans-serif;
+}
+main {
+  padding: 14px 16px 16px;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+h1 {
+  font-size: 16px;
+  margin: 0;
+}
+.plan {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 1px 8px;
+}
+.domain {
+  font-weight: 600;
+  word-break: break-all;
+}
+.meter {
+  height: 8px;
+  background: var(--line);
+  border-radius: 99px;
+  margin: 8px 0 6px;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  width: 0;
+  background: var(--safe);
+  transition: width 0.2s;
+}
+.verdict {
+  font-size: 13px;
+  color: var(--muted);
+}
+.reasons {
+  padding-left: 18px;
+  margin: 8px 0;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+button {
+  font: inherit;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #2e90fa;
+  outline-offset: 2px;
+}
+.status {
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 1em;
+  margin-top: 6px;
+}
+details {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 8px;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.trusted {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.trusted li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.fine {
+  font-size: 12px;
+  color: var(--muted);
+}

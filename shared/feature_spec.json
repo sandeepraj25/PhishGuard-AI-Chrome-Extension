@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "notes": "Ordered URL feature vector shared by the C++/WASM extractor, the Python training code and the extension. Changing order or meaning requires bumping 'version' and retraining. 'unknown' means the value used when the input is not available.",
+  "url_features": [
+    {"name": "url_length",                 "desc": "Bytes in the normalised URL"},
+    {"name": "host_length",                "desc": "Bytes in the host"},
+    {"name": "path_length",                "desc": "Bytes in path + query (fragment excluded)"},
+    {"name": "num_dots_host",              "desc": "Dots in the host"},
+    {"name": "num_subdomains",             "desc": "Labels to the left of the registered domain"},
+    {"name": "num_hyphens_host",           "desc": "Hyphens in the host"},
+    {"name": "num_digits_host",            "desc": "Digits in the host"},
+    {"name": "digit_ratio_url",            "desc": "Digits / URL length"},
+    {"name": "host_entropy",               "desc": "Shannon entropy (bits) of host bytes"},
+    {"name": "url_entropy",                "desc": "Shannon entropy (bits) of URL bytes"},
+    {"name": "suspicious_token_count",     "desc": "Distinct suspicious tokens found in the lower-cased URL"},
+    {"name": "is_risky_tld",               "desc": "TLD is in shared/risky_tlds.json"},
+    {"name": "tld_length",                 "desc": "Bytes in the TLD (last label)"},
+    {"name": "is_punycode",                "desc": "Any host label starts with xn--"},
+    {"name": "is_mixed_script",            "desc": "A decoded host label mixes letters from more than one script"},
+    {"name": "is_ip_host",                 "desc": "Host is an IPv4 or bracketed IPv6 literal"},
+    {"name": "has_at_symbol",              "desc": "URL authority contains '@' (userinfo trick)"},
+    {"name": "num_path_segments",          "desc": "Non-empty '/'-separated path segments"},
+    {"name": "num_query_params",           "desc": "'&'-separated non-empty query parameters"},
+    {"name": "has_nonstandard_port",       "desc": "Explicit port other than 80/443"},
+    {"name": "brand_in_host_not_official", "desc": "A brand token appears in the host but the registered domain is not an official domain of that brand"},
+    {"name": "brand_in_path",              "desc": "A brand token appears in path/query while the host is not official for that brand"},
+    {"name": "min_brand_edit_distance",    "desc": "Smallest edit distance (0-2) between a host label part and a brand token, 3 if none within 2, 3 if host is official", "unknown": 3},
+    {"name": "homoglyph_brand_match",      "desc": "Skeleton of the host matches a brand token but the raw host does not, and the host is not official"},
+    {"name": "domain_age_days",            "desc": "Days since domain registration (RDAP)", "unknown": -1},
+    {"name": "cert_age_days",              "desc": "Days since TLS certificate notBefore", "unknown": -1}
+  ]
+}

@@ -1,0 +1,7 @@
+// Local additions to the Public Suffix List snapshot. Remove an entry once the
+// upstream PSL snapshot contains it. Each one needs a reason.
+// RBI-mandated second-level zone for Indian banks (2025); without it every bank.in
+// site would share the registered domain "bank.in".
+bank.in
+// Restricted zone for Indian non-bank financial entities (announced with bank.in).
+fin.in

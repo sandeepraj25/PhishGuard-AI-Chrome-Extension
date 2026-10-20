@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Example Shop — Checkout</title>
+  </head>
+  <body>
+    <h1>Checkout</h1>
+    <form action="/pay" method="post">
+      <label>Card number <input id="card" name="cardnumber" autocomplete="cc-number" inputmode="numeric" /></label>
+      <label>CVV <input id="cvv" name="cvv" autocomplete="cc-csc" /></label>
+      <button>Pay</button>
+    </form>
+  </body>
+</html>

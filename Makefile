@@ -1,0 +1,62 @@
+# One-command workflows. `make all` rebuilds every generated artifact from source and runs all tests.
+PY ?= python3
+PG_TEST_DB ?= postgres://postgres@127.0.0.1:55432/phishguard_test
+PG_TEST_REDIS ?= redis://127.0.0.1:56379/1
+
+.PHONY: all shared wasm wasm-test wasm-emscripten data train eval parity bloom ext ext-test e2e backend-test ml-test readme test lint
+
+all: shared wasm data train eval bloom parity ext test readme
+
+shared:            ## regenerate derived shared data (PSL ASCII + confusables)
+	$(PY) ml/scripts/build_psl.py
+	$(PY) ml/scripts/build_confusables.py
+
+wasm:              ## native build + C++ unit tests + WASM (zig fallback; use wasm-emscripten if emsdk is installed)
+	cmake -S wasm -B wasm/build -DCMAKE_BUILD_TYPE=Release $(if $(MINIGTEST),-DPG_USE_MINIGTEST=ON,)
+	cmake --build wasm/build -j
+	./wasm/build/pg_tests
+	./wasm/build_zig.sh
+
+wasm-emscripten:
+	./wasm/build_emscripten.sh
+
+data:              ## synthetic sample data (replace with download_* + clean_dedupe.py for real data)
+	$(PY) ml/scripts/make_sample_data.py
+
+train:
+	$(PY) ml/scripts/train_url.py
+	$(PY) ml/scripts/export_shap_vectors.py
+
+eval:
+	$(PY) ml/scripts/eval_url.py
+
+bloom:
+	$(PY) ml/scripts/build_bloom.py --extra extension/tests/fixtures/known_bad_extra.txt
+
+parity:
+	$(PY) ml/scripts/parity_test.py
+
+ext:
+	cd extension && npm run build
+
+ml-test:
+	$(PY) -m mypy ml/phishguard_ml --ignore-missing-imports
+	$(PY) -m pytest -q ml/tests
+
+ext-test:
+	cd extension && npx vitest run
+
+e2e:
+	cd extension && npx playwright test
+
+backend-test:
+	cd backend && TEST_DATABASE_URL=$(PG_TEST_DB) TEST_REDIS_URL=$(PG_TEST_REDIS) npx vitest run
+
+lint:
+	cd extension && npx eslint src tests scripts && npx prettier --check . && npx tsc --noEmit
+	cd backend && npx eslint src tests && npx prettier --check . && npx tsc --noEmit
+
+test: ml-test ext-test backend-test e2e lint
+
+readme:
+	$(PY) scripts/update_readme_results.py

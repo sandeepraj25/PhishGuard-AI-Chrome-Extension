@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PhishGuard</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>PhishGuard</h1>
+        <span id="plan" class="plan"></span>
+      </header>
+      <section id="site" aria-live="polite">
+        <div class="domain" id="domain">Checking…</div>
+        <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" id="meter">
+          <div class="fill" id="fill"></div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+        <ul id="reasons" class="reasons"></ul>
+        <div class="row">
+          <button id="trust" type="button">I trust this site</button>
+          <button id="report" type="button">Report mistake</button>
+        </div>
+        <div id="status" class="status" role="status"></div>
+      </section>
+      <details id="trusted-box">
+        <summary>Trusted sites (<span id="trusted-count">0</span>)</summary>
+        <ul id="trusted" class="trusted"></ul>
+      </details>
+      <details>
+        <summary>Settings</summary>
+        <label class="check"
+          ><input type="checkbox" id="rdap" /> Look up domain age from public RDAP (sends the site name to
+          rdap.org)</label
+        >
+        <p class="fine">Pages are checked on this device. See the privacy notice in the store listing.</p>
+      </details>
+    </main>
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>

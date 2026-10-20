@@ -1,0 +1,23 @@
+# Registered domains that must never enter the known-bad list, even if a feed lists a URL on them.
+# Feeds often list phishing pages hosted on big platforms; blocking the whole registered domain
+# would break the platform for everyone. Hosting platforms whose customer sites are separate
+# registered domains under the Public Suffix List (e.g. *.web.app) do not need to be here.
+google.com
+microsoft.com
+apple.com
+amazon.com
+github.com
+dropbox.com
+docs.google.com
+sharepoint.com
+office.com
+live.com
+blogspot.com
+wordpress.com
+wixsite.com
+weebly.com
+000webhostapp.com
+duckdns.org
+ngrok.io
+example.com
+examplebank.test

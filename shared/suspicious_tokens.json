@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "notes": "Lower-case substrings counted in the full URL. Hand-curated, not learned from training data (avoids label leakage). Each token counts at most once.",
+  "tokens": ["login", "logon", "signin", "sign-in", "verify", "verification", "secure", "account", "update", "confirm",
+             "password", "passwd", "credential", "unlock", "suspend", "suspended", "billing", "invoice", "payment",
+             "wallet", "recover", "kyc", "otp", "refund", "reward", "bonus", "gift", "prize", "webscr", "cmd=",
+             "authenticate", "validation", "reactivate", "limited", "alert", "support", "helpdesk", "customer-care",
+             "ebayisapi", "redirect", "session", "token=", "banking", "netbanking", "ibanking", "upi", "pan-card",
+             "aadhaar-update", "e-kyc", "tracking", "parcel", "delivery-failed", "rekening", "verifikasi", "conta",
+             "atualizar", "verificar", "cuenta", "actualizar"]
+}

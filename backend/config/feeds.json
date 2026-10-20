@@ -1,0 +1,29 @@
+{
+  "notes": "Phishing feeds ingested every 15 minutes. See docs/data_licenses.md before enabling any feed in a commercial deployment. COMMERCIAL_MODE=true skips feeds with commercialUseAllowed=false.",
+  "feeds": [
+    {
+      "name": "openphish-community",
+      "format": "text",
+      "url": "https://openphish.com/feed.txt",
+      "enabled": true,
+      "commercialUseAllowed": false,
+      "note": "Community feed: non-commercial use only. Commercial feeds need a paid licence (set OPENPHISH_PREMIUM_URL)."
+    },
+    {
+      "name": "openphish-premium",
+      "format": "text",
+      "url": "${OPENPHISH_PREMIUM_URL}",
+      "enabled": true,
+      "commercialUseAllowed": true,
+      "note": "Only active when OPENPHISH_PREMIUM_URL is set."
+    },
+    {
+      "name": "phishtank",
+      "format": "phishtank-json",
+      "url": "https://data.phishtank.com/data/${PHISHTANK_APP_KEY}/online-valid.json",
+      "enabled": true,
+      "commercialUseAllowed": true,
+      "note": "Requires PHISHTANK_APP_KEY. PhishTank FAQ says commercial and non-commercial API use is OK and has hourly rate limits; re-check terms before launch (docs/data_licenses.md)."
+    }
+  ]
+}

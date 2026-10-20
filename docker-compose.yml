@@ -1,0 +1,47 @@
+# Local stack: Postgres, Redis, API and workers.  `docker compose up --build`
+# Secrets are read from .env (copy .env.example). Nothing here is a real credential.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: phishguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-phishguard-local-only}
+      POSTGRES_DB: phishguard
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U phishguard"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgres://phishguard:${POSTGRES_PASSWORD:-phishguard-local-only}@postgres:5432/phishguard
+      REDIS_URL: redis://redis:6379/0
+    ports: ["8787:8787"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  workers:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    command: ["npx", "tsx", "src/workers/main.ts"]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgres://phishguard:${POSTGRES_PASSWORD:-phishguard-local-only}@postgres:5432/phishguard
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+volumes:
+  pgdata:

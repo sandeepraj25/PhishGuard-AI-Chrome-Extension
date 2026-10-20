@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blocked: known phishing site</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #b42318;
+        color: #fff;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        padding: 16px;
+      }
+      main {
+        max-width: 560px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 12px;
+      }
+      .domain {
+        font-weight: 700;
+        word-break: break-all;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 24px;
+      }
+      button {
+        font: inherit;
+        padding: 10px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid #fff;
+      }
+      #back {
+        background: #fff;
+        color: #b42318;
+        font-weight: 700;
+      }
+      #proceed {
+        background: transparent;
+        color: #fff;
+      }
+      button:focus-visible {
+        outline: 3px solid #fde272;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main role="alert" data-testid="phishguard-block">
+      <h1>This is a known phishing site</h1>
+      <p><span class="domain" id="domain"></span> is on a list of sites that steal passwords and payment details.</p>
+      <p>
+        PhishGuard stopped the page before it loaded. Nothing was sent from your device except an anonymous 4-byte
+        fingerprint of the site name.
+      </p>
+      <div class="row">
+        <button id="back" type="button">Go back to safety</button>
+        <button id="proceed" type="button">I understand the risk, continue</button>
+      </div>
+    </main>
+    <script type="module" src="./block.ts"></script>
+  </body>
+</html>

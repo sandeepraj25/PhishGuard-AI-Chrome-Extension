@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+*.log
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+wasm/build/
+ml/data/raw/
+ml/data/processed/
+ml/data/_psl_merged.dat
+extension/public/data/*.json
+extension/public/data/psl_ascii.txt
+extension/public/ort/
+extension/test-results/
+extension/playwright-report/
+test-results/

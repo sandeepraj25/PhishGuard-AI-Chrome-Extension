@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "notes": "Hand-curated list of TLDs frequently reported as abused in public phishing reports (e.g. Interisle, Spamhaus TLD reports). Not derived from our training data, to avoid leakage. Review periodically.",
+  "tlds": ["tk", "ml", "ga", "cf", "gq", "xyz", "top", "club", "online", "site", "icu", "buzz", "shop", "work", "click",
+           "link", "rest", "cfd", "sbs", "bond", "quest", "zip", "mov", "cyou", "monster", "lol", "pw", "su", "ws",
+           "live", "life", "support", "help", "info", "biz", "win", "vip", "app", "digital", "fun", "store", "today"]
+}

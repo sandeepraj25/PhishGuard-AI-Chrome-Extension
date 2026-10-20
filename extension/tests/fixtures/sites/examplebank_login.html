@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- FICTIONAL brand used only for tests. ExampleBank does not exist. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ExampleBank — Sign in</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f4f6fb;
+        margin: 0;
+      }
+      .box {
+        max-width: 360px;
+        margin: 60px auto;
+        background: #fff;
+        padding: 28px;
+        border-radius: 12px;
+      }
+      h1 {
+        color: #1d3c8f;
+        font-size: 22px;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 18px;
+        width: 100%;
+        padding: 10px;
+        background: #1d3c8f;
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>ExampleBank Online</h1>
+      <p>Sign in to your account</p>
+      <form id="login" action="/session" method="post">
+        <label>Customer ID <input id="user" name="user" autocomplete="username" /></label>
+        <label>Password <input id="pass" name="password" type="password" autocomplete="current-password" /></label>
+        <button type="submit">Sign in</button>
+      </form>
+    </div>
+  </body>
+</html>

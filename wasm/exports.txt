@@ -1,0 +1,13 @@
+pg_alloc
+pg_free
+pg_num_features
+pg_init
+pg_extract
+pg_registered_domain
+pg_result_ptr
+pg_result_len
+pg_bloom_load
+pg_bloom_contains
+pg_bloom_items
+pg_edit_distance
+pg_skeleton

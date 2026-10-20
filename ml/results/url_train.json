@@ -1,0 +1,78 @@
+{
+  "script": "ml/scripts/train_url.py",
+  "generated_at": "2026-10-20T04:10:10+00:00",
+  "git_commit": "unknown",
+  "dataset": "synthetic-sample",
+  "data_file": "ml/data/processed/urls.csv",
+  "data_sha256": "2e474436d5a91b2d",
+  "host_only": false,
+  "split": {
+    "train": {
+      "rows": 20545,
+      "phishing": 5540,
+      "domains": 4611,
+      "first_seen_min": "2025-01-02",
+      "first_seen_max": "2026-09-30"
+    },
+    "val": {
+      "rows": 4745,
+      "phishing": 2285,
+      "domains": 1516,
+      "first_seen_min": "2026-01-27",
+      "first_seen_max": "2026-09-30"
+    },
+    "test": {
+      "rows": 6323,
+      "phishing": 3252,
+      "domains": 2141,
+      "first_seen_min": "2026-05-16",
+      "first_seen_max": "2026-09-30"
+    },
+    "method": "grouped-by-registered-domain + time-ordered (domain first_seen)"
+  },
+  "best_iteration": 266,
+  "num_trees": 266,
+  "model_bytes": {
+    "onnx": 606397,
+    "trees_json": 613289
+  },
+  "quantization": {
+    "attempted": true,
+    "fp32_bytes": 606397,
+    "quantized_bytes": 606472,
+    "note": "tree ensemble has no MatMul weights; quantisation does not shrink it"
+  },
+  "onnx_vs_lightgbm": {
+    "rows": 4745,
+    "max_abs_diff": 1.9782814209001742e-07,
+    "rows_diff_gt_1e-4": 0
+  },
+  "feature_importance_gain": {
+    "suspicious_token_count": 73338.03959528357,
+    "brand_in_host_not_official": 43331.41936407983,
+    "path_length": 31636.20440826565,
+    "num_digits_host": 23214.874792583287,
+    "min_brand_edit_distance": 10851.239743381739,
+    "homoglyph_brand_match": 9811.464256256819,
+    "brand_in_path": 7538.442307263613,
+    "cert_age_days": 3343.9989245533943,
+    "is_risky_tld": 2880.009252525866,
+    "host_length": 2374.0096810162067,
+    "num_subdomains": 1887.2756292447448,
+    "digit_ratio_url": 1837.9869273975492,
+    "num_hyphens_host": 1828.233701132238,
+    "url_entropy": 1705.9729463756084,
+    "tld_length": 1298.6264847666025,
+    "url_length": 838.3801060691476,
+    "domain_age_days": 823.2257356122136,
+    "host_entropy": 808.6660007610917,
+    "num_dots_host": 639.7508763894439,
+    "num_path_segments": 471.90314718335867,
+    "is_punycode": 359.8021754771471,
+    "has_at_symbol": 92.89760565757751,
+    "num_query_params": 54.544768661260605,
+    "is_mixed_script": 5.416252911090851,
+    "is_ip_host": 0.0,
+    "has_nonstandard_port": 0.0
+  }
+}
