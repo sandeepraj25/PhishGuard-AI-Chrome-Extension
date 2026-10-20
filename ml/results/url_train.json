@@ -1,7 +1,7 @@
 {
   "script": "ml/scripts/train_url.py",
-  "generated_at": "2026-10-20T04:21:39+00:00",
-  "git_commit": "c5f2e3a-dirty",
+  "generated_at": "2026-10-20T05:54:51+00:00",
+  "git_commit": "abbfa13-dirty",
   "dataset": "synthetic-sample",
   "data_file": "ml/data/processed/urls.csv",
   "data_sha256": "2e474436d5a91b2d",
@@ -33,13 +33,13 @@
   "best_iteration": 266,
   "num_trees": 266,
   "model_bytes": {
-    "onnx": 606397,
+    "onnx": 606384,
     "trees_json": 613289
   },
   "quantization": {
     "attempted": true,
-    "fp32_bytes": 606397,
-    "quantized_bytes": 606472,
+    "fp32_bytes": 606384,
+    "quantized_bytes": 606459,
     "note": "tree ensemble has no MatMul weights; quantisation does not shrink it"
   },
   "onnx_vs_lightgbm": {

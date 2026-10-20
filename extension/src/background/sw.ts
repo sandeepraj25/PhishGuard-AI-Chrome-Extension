@@ -6,16 +6,17 @@
  *  - All state lives in chrome.storage (the worker may be stopped at any time); the Engine is
  *    a cache that is rebuilt lazily after a restart.
  */
-import { EXTENSION_VERSION } from '../lib/config';
+import { EXTENSION_VERSION, VISUAL_FLOOR, VISUAL_GREY_HI, VISUAL_GREY_LO } from '../lib/config';
 import { fetchBloom, reasonIds, sendReport, type ReportPayload } from '../lib/api';
 import { Engine } from '../lib/engine';
 import { sha256Hex } from '../lib/hash';
 import { configureOrt } from '../lib/model';
 import { domainAgeDays } from '../lib/rdap';
 import * as store from '../lib/storage';
-import type { Message, PageSignals, Verdict } from '../lib/types';
+import type { FormGeometry, Message, PageSignals, Reason, Verdict } from '../lib/types';
+import { applyValidation, isPro, validateLicense } from '../lib/license';
 import { loadEngineAssets } from './assets';
-import { scorePage } from './offscreen';
+import { scorePage, scoreVisual } from './offscreen';
 
 configureOrt({ wasmUrl: chrome.runtime.getURL('ort/ort-wasm-simd-threaded.wasm'), proxy: false });
 
@@ -31,10 +32,18 @@ function engine(): Promise<Engine> {
 
 const isWeb = (u?: string): u is string => !!u && /^https?:\/\//i.test(u);
 
-/** Phase v3 gates Layers 2-3 behind Pro; until then (and in tests) they are always on. */
-const layer2Enabled = (_s: { plan: string }): boolean => true;
+/** Layers 2-3 are Pro features (free tier: Layer 1 + Password Guard + reasons + regional brands). */
+const layer2Enabled = (s: Parameters<typeof isPro>[0]): boolean => isPro(s);
 
-async function computeVerdict(url: string, opts: { sensitive?: boolean; page?: PageSignals } = {}): Promise<Verdict> {
+interface VerdictOptions {
+  sensitive?: boolean;
+  page?: PageSignals;
+  form?: FormGeometry;
+  /** Window of the (top-frame, active) tab that asked: required for a Layer 3 screenshot. */
+  windowId?: number;
+}
+
+async function computeVerdict(url: string, opts: VerdictOptions = {}): Promise<Verdict> {
   const eng = await engine();
   const settings = await store.getSettings();
   const domain = eng.registeredDomain(url);
@@ -45,7 +54,7 @@ async function computeVerdict(url: string, opts: { sensitive?: boolean; page?: P
   const age = settings.rdapOptIn && opts.sensitive ? await domainAgeDays(domain) : -1;
   // Layer 2 (page model) only at the password moment, in the offscreen document.
   const page = opts.sensitive && opts.page && layer2Enabled(settings) ? await scorePage(opts.page) : null;
-  const v = await eng.verdict(url, {
+  const ctx = {
     trusted,
     seenBefore,
     apiBase: settings.apiBase,
@@ -54,9 +63,47 @@ async function computeVerdict(url: string, opts: { sensitive?: boolean; page?: P
     extraReasons: page?.reasons ?? [],
     extraFloor: page?.floor ?? 0,
     layers: page ? ['url', 'page'] : ['url'],
-  });
+  };
+  let v = await eng.verdict(url, ctx);
+  // Layer 3 (visual) only when Layers 1-2 are unsure, the user is Pro, and we can see the form.
+  const grey = v.score >= VISUAL_GREY_LO && v.score <= VISUAL_GREY_HI && v.knownBad === 'no' && !trusted;
+  if (grey && opts.sensitive && opts.form && opts.windowId !== undefined && layer2Enabled(settings)) {
+    const visualReason = await lookAlike(domain, opts.form, opts.windowId);
+    if (visualReason) {
+      v = await eng.verdict(url, {
+        ...ctx,
+        extraReasons: [...ctx.extraReasons, visualReason],
+        extraFloor: Math.max(ctx.extraFloor, VISUAL_FLOOR),
+        layers: [...ctx.layers, 'visual'],
+      });
+    } else {
+      v = { ...v, layers: [...v.layers, 'visual'] };
+    }
+  }
   if (v.band === 'safe' && v.knownBad === 'no') await store.markSeen(domainHash);
   return v;
+}
+
+/** Screenshot the visible tab and ask the visual model whether the login area imitates a brand. */
+async function lookAlike(domain: string, form: FormGeometry, windowId: number): Promise<Reason | null> {
+  let pngDataUrl: string;
+  try {
+    pngDataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
+  } catch (e) {
+    await chrome.storage.session.set({ lastVisual: { error: String(e) } });
+    return null; // tab not visible / capture not allowed: fail open
+  }
+  const r = await scoreVisual({ pngDataUrl, form: form.rect, viewport: form.viewport, dpr: form.dpr });
+  // Diagnostics only (no URL, no image): what the visual model decided last.
+  await chrome.storage.session.set({
+    lastVisual: r ? { brand: r.brand, confidence: r.confidence, match: r.match, latencyMs: r.latencyMs } : null,
+  });
+  if (!r?.match || r.officialDomains.includes(domain)) return null;
+  return {
+    id: 'visual_brand_lookalike',
+    text: `Looks like ${r.brandName}'s sign-in page, but this site is not ${r.officialDomains[0]}`,
+    weight: 50 + r.confidence, // concrete evidence: rank above model-only reasons
+  };
 }
 
 async function updateBadge(tabId: number, v: Verdict): Promise<void> {
@@ -102,18 +149,36 @@ async function refreshBloom(): Promise<void> {
   }
 }
 
+async function refreshLicense(): Promise<void> {
+  const s = await store.getSettings();
+  if (!s.apiBase || !s.licenseKey) return;
+  try {
+    await store.setSettings(applyValidation(await validateLicense(s.apiBase, s.licenseKey), s.licenseKey));
+  } catch {
+    // Offline: keep the cached plan; isPro() enforces the offline grace period.
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   void chrome.alarms.create('bloom-refresh', { periodInMinutes: 15, delayInMinutes: 1 });
+  void chrome.alarms.create('license-refresh', { periodInMinutes: 24 * 60, delayInMinutes: 5 });
 });
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === 'bloom-refresh') void refreshBloom();
+  if (a.name === 'license-refresh') void refreshLicense();
 });
 
 async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promise<unknown> {
   switch (msg.type) {
     case 'getVerdict': {
       if (!isWeb(msg.url)) return null;
-      const v = await computeVerdict(msg.url, { sensitive: msg.sensitive, page: msg.page });
+      const top = sender.frameId === 0 && sender.tab?.active;
+      const v = await computeVerdict(msg.url, {
+        sensitive: msg.sensitive,
+        page: msg.page,
+        form: top ? msg.form : undefined,
+        windowId: top ? sender.tab?.windowId : undefined,
+      });
       if (sender.tab?.id !== undefined && sender.frameId === 0) {
         await store.setTabVerdict(sender.tab.id, v);
         await updateBadge(sender.tab.id, v);
@@ -156,6 +221,19 @@ async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promi
       if (!settings.apiBase) return { sent: false, reason: 'offline mode: no server configured' };
       return { sent: await sendReport(settings.apiBase, payload).catch(() => false) };
     }
+    case 'activateLicense': {
+      const s = await store.getSettings();
+      if (!s.apiBase) return { valid: false, reason: 'offline mode: no server configured' };
+      try {
+        const r = await validateLicense(s.apiBase, msg.key.trim());
+        await store.setSettings(applyValidation(r, msg.key.trim()));
+        return r;
+      } catch {
+        return { valid: false, reason: 'could not reach the licence server' };
+      }
+    }
+    case 'deactivateLicense':
+      return store.setSettings({ plan: 'free', licenseKey: '', licenseExpiresAt: '', licenseCheckedAt: 0 });
     case 'getSettings':
       return store.getSettings();
     case 'setSettings':

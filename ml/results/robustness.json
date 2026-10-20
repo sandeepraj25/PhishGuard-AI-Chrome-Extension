@@ -1,0 +1,238 @@
+{
+  "script": "ml/scripts/eval_robustness.py",
+  "generated_at": "2026-10-20T04:43:24+00:00",
+  "git_commit": "abbfa13-dirty",
+  "dataset": "synthetic-sample",
+  "data_file": "ml/data/processed/urls.csv",
+  "data_sha256": "2e474436d5a91b2d",
+  "phishing_urls": 3252,
+  "legit_urls": 3071,
+  "attacks": {
+    "homoglyph_swap": {
+      "urls_changed": 2536,
+      "examples": [
+        "https://m.xn--whatsap-secure-v0l.support/verify/account",
+        "http://xn--uidi-travel275-xtl.vercel.app/wp-includes/uidai/secure/update.html",
+        "https://xn--uida-travel275-89l.vercel.app/bazaar/uidai/billing/payment"
+      ],
+      "rules_baseline": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.6958794587945879,
+          "recall_after": 0.8822263222632226,
+          "delta": 0.18634686346863472
+        },
+        "score_gt_60": {
+          "recall_before": 0.5064575645756457,
+          "recall_after": 0.8056580565805658,
+          "delta": 0.29920049200492005
+        }
+      },
+      "model_onnx": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9944649446494465,
+          "delta": -0.00030750307503080165
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9929274292742928,
+          "delta": -0.0015375153751536752
+        }
+      },
+      "combined_shipped": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9944649446494465,
+          "delta": -0.00030750307503080165
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9929274292742928,
+          "delta": -0.0015375153751536752
+        }
+      }
+    },
+    "extra_subdomains": {
+      "urls_changed": 3252,
+      "examples": [
+        "http://secure.login.verify.www.xn--steamowered-koj.net/signin.php",
+        "http://secure.login.verify.xn--steamowered-koj.net/verify/account",
+        "https://secure.login.verify.www.xn--steamowered-koj.net/signin.php"
+      ],
+      "rules_baseline": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.6958794587945879,
+          "recall_after": 0.7755227552275523,
+          "delta": 0.07964329643296442
+        },
+        "score_gt_60": {
+          "recall_before": 0.5064575645756457,
+          "recall_after": 0.7346248462484625,
+          "delta": 0.22816728167281675
+        }
+      },
+      "model_onnx": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9892373923739237,
+          "delta": -0.005535055350553542
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9867773677736777,
+          "delta": -0.007687576875768709
+        }
+      },
+      "combined_shipped": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9892373923739237,
+          "delta": -0.005535055350553542
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9867773677736777,
+          "delta": -0.007687576875768709
+        }
+      }
+    },
+    "typo": {
+      "urls_changed": 2549,
+      "examples": [
+        "https://m.whataspp-secure.support/verify/account",
+        "http://uidai-travl275.vercel.app/wp-includes/uidai/secure/update.html",
+        "https://uidai-travl275.vercel.app/bazaar/uidai/billing/payment"
+      ],
+      "rules_baseline": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.6958794587945879,
+          "recall_after": 0.5639606396063961,
+          "delta": -0.13191881918819182
+        },
+        "score_gt_60": {
+          "recall_before": 0.5064575645756457,
+          "recall_after": 0.39329643296432965,
+          "delta": -0.11316113161131608
+        }
+      },
+      "model_onnx": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9670971709717097,
+          "delta": -0.027675276752767597
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9615621156211562,
+          "delta": -0.032902829028290226
+        }
+      },
+      "combined_shipped": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9670971709717097,
+          "delta": -0.027675276752767597
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9615621156211562,
+          "delta": -0.032902829028290226
+        }
+      }
+    },
+    "brand_in_path": {
+      "urls_changed": 3252,
+      "examples": [
+        "http://www.northriver.com/steam/signin.php",
+        "http://www.northriver.com/steam/verify/account",
+        "https://www.bluemaple.com/steam/signin.php"
+      ],
+      "rules_baseline": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.6958794587945879,
+          "recall_after": 0.004920049200492005,
+          "delta": -0.6909594095940959
+        },
+        "score_gt_60": {
+          "recall_before": 0.5064575645756457,
+          "recall_after": 0.0,
+          "delta": -0.5064575645756457
+        }
+      },
+      "model_onnx": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9477244772447725,
+          "delta": -0.04704797047970477
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9431119311193112,
+          "delta": -0.051353013530135216
+        }
+      },
+      "combined_shipped": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9477244772447725,
+          "delta": -0.04704797047970477
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9431119311193112,
+          "delta": -0.051353013530135216
+        }
+      }
+    },
+    "evasion_clean": {
+      "urls_changed": 3140,
+      "examples": [
+        "https://www.xn--steamowered-koj.com/info.php",
+        "https://xn--steamowered-koj.com/page/info",
+        "https://www.xn--steamowered-koj.com/page.php"
+      ],
+      "rules_baseline": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.6958794587945879,
+          "recall_after": 0.4037515375153752,
+          "delta": -0.2921279212792127
+        },
+        "score_gt_60": {
+          "recall_before": 0.5064575645756457,
+          "recall_after": 0.31273062730627305,
+          "delta": -0.19372693726937268
+        }
+      },
+      "model_onnx": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9391143911439115,
+          "delta": -0.05565805658056577
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9363468634686347,
+          "delta": -0.05811808118081174
+        }
+      },
+      "combined_shipped": {
+        "at_0.1pct_fpr": {
+          "recall_before": 0.9947724477244773,
+          "recall_after": 0.9391143911439115,
+          "delta": -0.05565805658056577
+        },
+        "score_gt_60": {
+          "recall_before": 0.9944649446494465,
+          "recall_after": 0.9363468634686347,
+          "delta": -0.05811808118081174
+        }
+      }
+    }
+  },
+  "thresholds_at_0.1pct_fpr": {
+    "rules_baseline": 50.0,
+    "model_onnx": 45.38105010986328,
+    "combined_shipped": 45.38105130195618
+  },
+  "summary_line": "worst attack for the shipped score: evasion_clean (recall at score > 60 99.4% → 93.6%) on 3252 synthetic-sample phishing URLs; full table in the JSON."
+}

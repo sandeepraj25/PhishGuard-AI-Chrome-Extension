@@ -4,10 +4,21 @@ import { configureOrt } from '../lib/model';
 import { flattenUrgency, type BrandEntry } from '../lib/pagefeatures';
 import { PageScorer } from '../lib/pagescore';
 import type { TreeModel } from '../lib/treeshap';
+import { VisualScorer, type VisualGallery, type VisualRequest } from '../lib/visualscore';
 import { FeatureExtractor } from '../lib/wasm';
 
 let base = '';
 let pageScorer: Promise<PageScorer> | null = null;
+let visualScorer: Promise<VisualScorer> | null = null;
+
+async function initVisual(): Promise<VisualScorer> {
+  configureOrt({ wasmUrl: `${base}ort/ort-wasm-simd-threaded.wasm`, proxy: false });
+  const [onnx, gallery] = await Promise.all([
+    get('models/visual_model.onnx').then((r) => r.arrayBuffer()),
+    get('models/visual_gallery.json').then(async (r) => (await r.json()) as VisualGallery),
+  ]);
+  return VisualScorer.create(onnx, gallery);
+}
 
 const get = async (p: string) => {
   const r = await fetch(base + p);
@@ -50,9 +61,17 @@ self.onmessage = async (e: MessageEvent) => {
       const page = await (await pageScorer).score(msg.raw as Parameters<PageScorer['score']>[0]);
       return self.postMessage({ id: msg.id, ok: true, page });
     }
+    if (msg.kind === 'visual') {
+      visualScorer ??= initVisual();
+      const req = (msg as unknown as { req: Omit<VisualRequest, 'png'> & { pngDataUrl: string } }).req;
+      const png = await (await fetch(req.pngDataUrl)).arrayBuffer();
+      const visual = await (await visualScorer).score({ ...req, png });
+      return self.postMessage({ id: msg.id, ok: true, visual });
+    }
     self.postMessage({ id: msg.id, ok: false, error: `unknown request ${msg.kind}` });
   } catch (err) {
-    pageScorer = null;
+    if (msg.kind === 'page') pageScorer = null;
+    if (msg.kind === 'visual') visualScorer = null;
     self.postMessage({ id: msg.id, ok: false, error: String(err) });
   }
 };

@@ -120,3 +120,49 @@ flowchart LR
 ### Review queue → retraining
 
 `Report mistake` → `/v1/report` (pending) → admin review (`/v1/admin/reports/:id/review`, bearer `ADMIN_TOKEN`) → `/v1/admin/reports/export` → `ml/scripts/import_reviews.py` → `train_url.py --extra`. Regional labels follow the same path via `label_cli.py export`.
+
+## 9. Phase v3 additions
+
+### Layer 3 — visual look-alike check (Pro, grey zone only)
+
+```mermaid
+sequenceDiagram
+  participant CS as Content script
+  participant SW as Service worker
+  participant OFF as Offscreen worker
+  CS->>SW: getVerdict(url, page signals, form rectangle, devicePixelRatio)
+  SW->>SW: Layers 1-2 -> score
+  alt Pro and 20 <= score <= 70 (grey zone) and top frame
+    SW->>SW: chrome.tabs.captureVisibleTab (PNG, in memory)
+    SW->>OFF: PNG + form rectangle
+    OFF->>OFF: loginCrop + area-average resize (visualprep.ts) -> 160x160
+    OFF->>OFF: MobileNetV3-small embedding (ONNX, int8) -> compare with gallery
+    OFF-->>SW: "looks like ExampleBank" (+confidence) or no match
+    SW->>SW: if brand matched and domain is not official -> floor 72 + reason
+  end
+```
+
+- **One implementation of image preprocessing** (`extension/src/lib/visualprep.ts`) produces both the training images (Node + Playwright) and the runtime input; the network normalises internally, so the browser feeds raw 0–255 pixels.
+- Decision rule chosen on validation between nearest-neighbour against official-page embeddings and learned brand prototypes (see `ml/results/visual_eval.json` for the chosen rule and threshold).
+- The demo gallery contains **fictional brands only**. Production needs real captures of official login pages (HUMAN_TODO).
+
+### Pro licensing
+
+```mermaid
+flowchart LR
+  U["Popup: Upgrade"] --> CO["/checkout (our site) + Paddle.js"]
+  CO -- "customData.claim_token" --> PADDLE["Paddle"]
+  PADDLE -- "signed webhook subscription.*" --> WH["/v1/paddle/webhook<br/>HMAC check, issue signed key"]
+  WH --> DB[("licenses")]
+  CO -- "poll /v1/license/claim?token" --> KEY["key shown once"]
+  KEY --> POP["Popup: Activate"] --> VAL["/v1/license/validate<br/>signature + subscription status"]
+  VAL --> EXT["chrome.storage: plan, expiry, last check"]
+```
+
+- Keys: `PG1.<payload>.<HMAC-SHA256>`; the secret never ships in the extension; validation also checks the subscription status so cancellations take effect.
+- Region pricing: `backend/config/pricing.json` maps countries to Tier 1/2/3; price IDs from env. Country comes from the browser language, never from IP geolocation.
+- Offline grace: Pro keeps working up to 14 days without reaching the server (`extension/src/lib/license.ts`).
+
+### Retraining
+
+`.github/workflows/retrain.yml` (weekly) → `ml/scripts/retrain.py`: train a candidate, evaluate candidate **and** production on the same newest test split, promote only if recall at 0.1% FPR does not drop (and PR-AUC drops ≤ 0.005), open a PR with the new model.

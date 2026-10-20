@@ -1,0 +1,87 @@
+{
+  "script": "ml/scripts/train_visual.py",
+  "generated_at": "2026-10-20T05:49:20+00:00",
+  "git_commit": "abbfa13-dirty",
+  "dataset": "synthetic-sample",
+  "data_file": "ml/data/visual/index.csv",
+  "data_sha256": "86dab00e8eada5d0",
+  "classes": [
+    "civicportal",
+    "examplebank",
+    "lumorabank",
+    "mailora",
+    "parcelix",
+    "quillpay",
+    "other"
+  ],
+  "epochs": 30,
+  "train_seconds": 618.3,
+  "images": {
+    "train": 2912,
+    "val": 546,
+    "test": 642
+  },
+  "shipped": "int8",
+  "size_bytes": {
+    "fp32": 2447195,
+    "int8": 907892
+  },
+  "latency_ms": {
+    "fp32": {
+      "p50": 1.2795325001206947,
+      "p95": 1.7250655515454123,
+      "runs": 100,
+      "note": "onnxruntime CPU, 1 image, this build machine; browser (ORT Web wasm) is slower"
+    },
+    "int8": {
+      "p50": 1.4476205005848897,
+      "p95": 1.8367486509305309,
+      "runs": 100,
+      "note": "onnxruntime CPU, 1 image, this build machine; browser (ORT Web wasm) is slower"
+    }
+  },
+  "fp32_vs_int8_mean_cosine": 0.9859224557876587,
+  "eval_fp32": {
+    "rule": "proto",
+    "threshold": 0.9850000000000005,
+    "max_val_fmr": 0.02,
+    "val": {
+      "clones": 216,
+      "clone_detection_rate": 0.4212962962962963,
+      "generic": 312,
+      "generic_false_match_rate": 0.019230769230769232,
+      "official": 18,
+      "official_match_rate": 0.4444444444444444
+    },
+    "test": {
+      "clones": 243,
+      "clone_detection_rate": 0.551440329218107,
+      "generic": 380,
+      "generic_false_match_rate": 0.021052631578947368,
+      "official": 19,
+      "official_match_rate": 0.5789473684210527
+    }
+  },
+  "eval_int8": {
+    "rule": "proto",
+    "threshold": 0.9825000000000006,
+    "max_val_fmr": 0.02,
+    "val": {
+      "clones": 216,
+      "clone_detection_rate": 0.4305555555555556,
+      "generic": 312,
+      "generic_false_match_rate": 0.019230769230769232,
+      "official": 18,
+      "official_match_rate": 0.4444444444444444
+    },
+    "test": {
+      "clones": 243,
+      "clone_detection_rate": 0.5555555555555556,
+      "generic": 380,
+      "generic_false_match_rate": 0.015789473684210527,
+      "official": 19,
+      "official_match_rate": 0.5789473684210527
+    }
+  },
+  "summary_line": "int8 model 887 KB (fp32 2390 KB), CPU latency p50 1.1 ms; test clone detection 55.6% at 1.6% false matches on generic pages (rule 'proto', fictional-brand synthetic data)."
+}

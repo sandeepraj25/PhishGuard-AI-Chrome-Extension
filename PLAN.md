@@ -1,6 +1,6 @@
 # PhishGuard AI — Build Plan
 
-**Status:** v1 and v2 complete (see section 6).
+**Status:** v1, v2 and v3 complete (see section 6).
 
 This file is the working plan. It is updated at the end of every phase.
 
@@ -86,12 +86,12 @@ phishguard-ai/
 - [x] e2e: form-action mismatch fixture; commit "phase v2 complete"
 
 ### v3 — Pro
-- [ ] Visual embedding model (MobileNetV3-small family), reference gallery, grey-zone only
-- [ ] eval_robustness.py (homoglyph swaps, extra subdomains, typos, brand-in-path)
-- [ ] License validation API, Paddle webhook behind env vars, Tier 1/2/3 price IDs
-- [ ] Feature gating in extension (Free: Layer 1 + Guard + reasons + regional; Pro: Layers 2–3)
-- [ ] Weekly retrain job with promotion gate (recall@0.1%FPR must not drop)
-- [ ] e2e visual look-alike fixture; commit "phase v3 complete"
+- [x] Visual embedding model (MobileNetV3-small family), reference gallery, grey-zone only
+- [x] eval_robustness.py (homoglyph swaps, extra subdomains, typos, brand-in-path)
+- [x] License validation API, Paddle webhook behind env vars, Tier 1/2/3 price IDs
+- [x] Feature gating in extension (Free: Layer 1 + Guard + reasons + regional; Pro: Layers 2–3)
+- [x] Weekly retrain job with promotion gate (recall@0.1%FPR must not drop)
+- [x] e2e visual look-alike fixture; commit "phase v3 complete"
 
 ### v4 — Scale
 - [ ] Orgs, seats, warning-event ingestion (no URLs, no history)
@@ -161,3 +161,10 @@ phishguard-ai/
 - Lead-time tracker: `domain_sightings` + `/v1/admin/leadtime.csv` + `ml/scripts/eval_leadtime.py`.
 - Regional labeling CLI (append-only log, undo, multi-labeler majority, conflicts) + export with auto-generated datasheet.
 - Review queue: admin API (bearer token), export → `import_reviews.py` → `train_url.py --extra`.
+
+### v3 — complete
+- Layer 3 visual model: MobileNetV3-small (width 0.75, 160 px, trained from scratch on fictional-brand pages), int8 ONNX 887 KB, gallery + rule chosen on validation; grey zone 20–70 only; one TS preprocessing implementation for training and runtime.
+- Robustness eval (5 scripted attacks) → `ml/results/robustness.json`.
+- Pro plan: signed licence keys, Paddle webhook (HMAC, replay window), one-time key pickup, region tiers, popup activation, daily revalidation with 14-day offline grace; Layers 2–3 gated.
+- Weekly retrain with promotion gate (`ml/scripts/retrain.py`, `.github/workflows/retrain.yml`).
+- Decision changes: host permission is now `<all_urls>` (needed by `captureVisibleTab`); decision 6 applied (from-scratch visual model).

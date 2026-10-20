@@ -5,6 +5,7 @@ import type {
   CrawlResult,
   CtCandidate,
   KnownBadRow,
+  LicenseRow,
   RdapEntry,
   ReportInput,
   ReportRow,
@@ -257,6 +258,72 @@ export class PgStore implements Store {
        ON CONFLICT (domain, source) DO UPDATE SET first_seen = LEAST(domain_sightings.first_seen, EXCLUDED.first_seen)`,
       [domain, source, at],
     );
+  }
+
+  private static toLicense(x: Record<string, unknown>): LicenseRow {
+    return {
+      id: x.id as string,
+      keyHash: x.key_hash as string,
+      plan: x.plan as LicenseRow['plan'],
+      status: x.status as LicenseRow['status'],
+      seats: x.seats as number,
+      expiresAt: x.expires_at as Date,
+      paddleSubscriptionId: (x.paddle_subscription_id as string | null) ?? null,
+      paddleCustomerId: (x.paddle_customer_id as string | null) ?? null,
+      orgId: (x.org_id as string | null) ?? null,
+    };
+  }
+
+  async insertLicense(l: LicenseRow) {
+    await this.pool.query(
+      `INSERT INTO licenses (id, key_hash, plan, status, seats, expires_at, paddle_subscription_id, paddle_customer_id, org_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [l.id, l.keyHash, l.plan, l.status, l.seats, l.expiresAt, l.paddleSubscriptionId, l.paddleCustomerId, l.orgId],
+    );
+  }
+
+  async updateLicense(id: string, patch: Partial<Omit<LicenseRow, 'id' | 'keyHash'>>) {
+    const cols: Record<string, string> = {
+      plan: 'plan',
+      status: 'status',
+      seats: 'seats',
+      expiresAt: 'expires_at',
+      paddleSubscriptionId: 'paddle_subscription_id',
+      paddleCustomerId: 'paddle_customer_id',
+      orgId: 'org_id',
+    };
+    const entries = Object.entries(patch).filter(([k]) => k in cols);
+    if (!entries.length) return;
+    const sets = entries.map(([k], i) => `${cols[k]} = $${i + 2}`).join(', ');
+    await this.pool.query(`UPDATE licenses SET ${sets}, updated_at = now() WHERE id = $1`, [
+      id,
+      ...entries.map(([, v]) => v),
+    ]);
+  }
+
+  async licenseById(id: string) {
+    const r = await this.pool.query('SELECT * FROM licenses WHERE id = $1', [id]);
+    return r.rows[0] ? PgStore.toLicense(r.rows[0]) : null;
+  }
+
+  async licenseBySubscription(sub: string) {
+    const r = await this.pool.query('SELECT * FROM licenses WHERE paddle_subscription_id = $1', [sub]);
+    return r.rows[0] ? PgStore.toLicense(r.rows[0]) : null;
+  }
+
+  async savePickup(h: string, key: string) {
+    await this.pool.query(
+      'INSERT INTO license_pickup (claim_token_hash, license_key) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [h, key],
+    );
+  }
+
+  async takePickup(h: string) {
+    const r = await this.pool.query<{ license_key: string }>(
+      'DELETE FROM license_pickup WHERE claim_token_hash = $1 RETURNING license_key',
+      [h],
+    );
+    return r.rows[0]?.license_key ?? null;
   }
 
   async close() {

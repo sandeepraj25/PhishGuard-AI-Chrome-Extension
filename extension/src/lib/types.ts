@@ -32,7 +32,7 @@ export interface Verdict {
 export type PageSignals = RawPageSignals;
 
 export type Message =
-  | { type: 'getVerdict'; url: string; page?: PageSignals; sensitive?: boolean }
+  | { type: 'getVerdict'; url: string; page?: PageSignals; sensitive?: boolean; form?: FormGeometry }
   | { type: 'getTabVerdict'; tabId: number }
   | { type: 'trustSite'; domain: string }
   | { type: 'untrustSite'; domain: string }
@@ -41,13 +41,24 @@ export type Message =
   | { type: 'leaveSite' }
   | { type: 'allowOnce'; domain: string; url: string }
   | { type: 'getSettings' }
-  | { type: 'setSettings'; settings: Partial<Settings> };
+  | { type: 'setSettings'; settings: Partial<Settings> }
+  | { type: 'activateLicense'; key: string }
+  | { type: 'deactivateLicense' };
+
+/** Where the focused form is on screen (CSS px), for the Layer 3 "login area" crop. */
+export interface FormGeometry {
+  rect: { x: number; y: number; width: number; height: number };
+  viewport: { width: number; height: number };
+  dpr: number;
+}
 
 export interface Settings {
   apiBase: string; // '' = backend disabled (fully offline)
   rdapOptIn: boolean; // D6: query public RDAP directly from the device for domain age
-  plan: 'free' | 'pro';
+  plan: 'free' | 'pro' | 'teams';
   licenseKey: string;
+  licenseExpiresAt: string; // ISO time confirmed by the server ('' = none)
+  licenseCheckedAt: number; // ms epoch of the last successful server check
 }
 
 export type { MatchDetails };

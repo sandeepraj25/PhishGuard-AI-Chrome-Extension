@@ -62,6 +62,18 @@ export interface CrawlResult {
   error: string | null;
 }
 
+export interface LicenseRow {
+  id: string;
+  keyHash: string;
+  plan: 'pro' | 'teams';
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'paused';
+  seats: number;
+  expiresAt: Date;
+  paddleSubscriptionId: string | null;
+  paddleCustomerId: string | null;
+  orgId: string | null;
+}
+
 export interface Store {
   upsertKnownBad(domain: string, fullHash: string, source: string, seenAt: Date): Promise<'inserted' | 'updated'>;
   hashesForPrefix(prefix: string): Promise<string[]>;
@@ -90,6 +102,14 @@ export interface Store {
   finishCrawl(result: CrawlResult): Promise<void>;
   getCrawlResult(domain: string): Promise<CrawlResult | null>;
   recordSighting(domain: string, source: string, at: Date): Promise<void>;
+
+  // v3: licences
+  insertLicense(l: LicenseRow): Promise<void>;
+  updateLicense(id: string, patch: Partial<Omit<LicenseRow, 'id' | 'keyHash'>>): Promise<void>;
+  licenseById(id: string): Promise<LicenseRow | null>;
+  licenseBySubscription(subscriptionId: string): Promise<LicenseRow | null>;
+  savePickup(claimTokenHash: string, key: string): Promise<void>;
+  takePickup(claimTokenHash: string): Promise<string | null>;
   latestBloom(): Promise<BloomVersion | null>;
 
   close(): Promise<void>;

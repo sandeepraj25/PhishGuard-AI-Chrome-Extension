@@ -8,5 +8,10 @@
     "version": "page-2026-10-20-c5f2e3a-dirty",
     "features": 23,
     "dataset": "synthetic-sample"
+  },
+  "visual": {
+    "version": "visual-2026-10-20-abbfa13-dirty",
+    "quantized": true,
+    "dataset": "synthetic-sample (fictional brands)"
   }
 }

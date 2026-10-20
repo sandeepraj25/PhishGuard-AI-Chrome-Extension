@@ -29,6 +29,25 @@
         <summary>Trusted sites (<span id="trusted-count">0</span>)</summary>
         <ul id="trusted" class="trusted"></ul>
       </details>
+      <details id="plan-box">
+        <summary>Plan: <span id="plan-name">Free</span></summary>
+        <p class="fine" id="plan-detail">
+          Free includes the URL check, the password warning, reasons and regional brands. Pro adds page and visual
+          look-alike checks.
+        </p>
+        <div id="free-actions">
+          <label class="fine" for="license-key">Licence key</label>
+          <div class="row">
+            <input id="license-key" type="text" autocomplete="off" spellcheck="false" placeholder="PG1…" />
+            <button id="activate" type="button">Activate</button>
+          </div>
+          <button id="upgrade" type="button">Upgrade to Pro</button>
+        </div>
+        <div id="pro-actions" hidden>
+          <button id="deactivate" type="button">Remove licence from this browser</button>
+        </div>
+        <div id="license-status" class="status" role="status"></div>
+      </details>
       <details>
         <summary>Settings</summary>
         <label class="check"

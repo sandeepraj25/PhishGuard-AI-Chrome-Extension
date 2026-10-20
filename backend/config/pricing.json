@@ -1,0 +1,85 @@
+{
+  "notes": "Region-based pricing tiers (PLAN.md decision 5). Price IDs come from env vars (Paddle dashboard). Country codes are ISO 3166-1 alpha-2. Countries not listed fall back to defaultTier. Prices themselves are set in Paddle, not here.",
+  "defaultTier": "tier2",
+  "tiers": {
+    "tier1": {
+      "priceIdEnv": "PADDLE_PRICE_TIER1_MONTHLY",
+      "countries": [
+        "US",
+        "CA",
+        "GB",
+        "IE",
+        "DE",
+        "FR",
+        "NL",
+        "BE",
+        "LU",
+        "AT",
+        "CH",
+        "SE",
+        "NO",
+        "DK",
+        "FI",
+        "IS",
+        "AU",
+        "NZ",
+        "JP",
+        "SG",
+        "AE",
+        "QA",
+        "IL"
+      ]
+    },
+    "tier2": {
+      "priceIdEnv": "PADDLE_PRICE_TIER2_MONTHLY",
+      "countries": [
+        "ES",
+        "IT",
+        "PT",
+        "PL",
+        "CZ",
+        "GR",
+        "KR",
+        "TW",
+        "SA",
+        "CL",
+        "UY",
+        "MY",
+        "HU",
+        "RO",
+        "HR",
+        "SK",
+        "SI",
+        "EE",
+        "LV",
+        "LT"
+      ]
+    },
+    "tier3": {
+      "priceIdEnv": "PADDLE_PRICE_TIER3_MONTHLY",
+      "countries": [
+        "IN",
+        "ID",
+        "BR",
+        "MX",
+        "AR",
+        "CO",
+        "PE",
+        "PH",
+        "VN",
+        "TH",
+        "PK",
+        "BD",
+        "LK",
+        "NP",
+        "EG",
+        "NG",
+        "KE",
+        "ZA",
+        "TR",
+        "UA",
+        "MA"
+      ]
+    }
+  }
+}

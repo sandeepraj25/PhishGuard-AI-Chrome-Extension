@@ -1,0 +1,57 @@
+# Weekly retraining with a promotion gate (ml/scripts/retrain.py).
+# Opens a pull request with the new model ONLY if it was promoted; nothing ships without review.
+name: weekly-retrain
+on:
+  schedule:
+    - cron: "17 3 * * 1"   # Mondays 03:17 UTC
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install lightgbm onnx onnxruntime onnxmltools skl2onnx numpy pandas scikit-learn
+      - name: Fetch data (real feeds need secrets; see docs/HUMAN_TODO.md)
+        env:
+          PHISHTANK_APP_KEY: ${{ secrets.PHISHTANK_APP_KEY }}
+          OPENPHISH_FEED_URL: ${{ secrets.OPENPHISH_PREMIUM_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          API_BASE: ${{ vars.API_BASE }}
+        run: |
+          python ml/scripts/download_tranco.py --top 100000
+          python ml/scripts/download_openphish.py
+          if [ -n "$PHISHTANK_APP_KEY" ]; then python ml/scripts/download_phishtank.py; fi
+          python ml/scripts/clean_dedupe.py
+          if [ -n "$ADMIN_TOKEN" ] && [ -n "$API_BASE" ]; then
+            curl -fsS -H "authorization: Bearer $ADMIN_TOKEN" "$API_BASE/v1/admin/reports/export?status=confirmed" > reviews.csv
+            python ml/scripts/import_reviews.py reviews.csv
+          fi
+      - name: Retrain and gate
+        id: gate
+        run: |
+          set +e
+          EXTRA=""; [ -f ml/data/extra/reviewed_reports.csv ] && EXTRA="--extra ml/data/extra/reviewed_reports.csv"
+          python ml/scripts/retrain.py --host-only $EXTRA
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+      - name: Open PR when promoted
+        if: steps.gate.outputs.code == '0'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: retrain/${{ github.run_id }}
+          title: "Weekly retrain: promoted URL model"
+          body: "Promotion gate passed. See ml/results/retrain_latest.json."
+          add-paths: |
+            ml/models/url_model.*
+            ml/models/url_trees.json
+            extension/public/models/url_model.onnx
+            extension/public/models/url_trees.json
+            ml/results/retrain_*.json
+      - name: Fail loudly on errors (code 1)
+        if: steps.gate.outputs.code == '1'
+        run: exit 1

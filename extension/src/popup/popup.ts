@@ -80,9 +80,44 @@ $('rdap').addEventListener('change', async (e) => {
   await send({ type: 'setSettings', settings: { rdapOptIn: (e.target as HTMLInputElement).checked } });
 });
 
+function renderPlan(s: Settings): void {
+  const paid = s.plan === 'pro' || s.plan === 'teams';
+  const name = s.plan === 'teams' ? 'Teams' : paid ? 'Pro' : 'Free';
+  $('plan').textContent = name;
+  $('plan-name').textContent = name;
+  $('free-actions').hidden = paid;
+  $('pro-actions').hidden = !paid;
+  ($('upgrade') as HTMLButtonElement).disabled = !s.apiBase;
+  if (paid && s.licenseExpiresAt)
+    $('plan-detail').textContent = `Active until ${new Date(s.licenseExpiresAt).toLocaleDateString()}.`;
+}
+
+$('activate').addEventListener('click', async () => {
+  const key = ($('license-key') as HTMLInputElement).value.trim();
+  if (!key) return;
+  $('license-status').textContent = 'Checking licence…';
+  const r = await send<{ valid: boolean; reason?: string }>({ type: 'activateLicense', key });
+  $('license-status').textContent = r.valid
+    ? 'Pro is active. Thank you!'
+    : `Not activated: ${r.reason ?? 'unknown error'}`;
+  renderPlan(await send<Settings>({ type: 'getSettings' }));
+});
+
+$('deactivate').addEventListener('click', async () => {
+  renderPlan(await send<Settings>({ type: 'deactivateLicense' }));
+});
+
+$('upgrade').addEventListener('click', async () => {
+  const s = await send<Settings>({ type: 'getSettings' });
+  if (!s.apiBase) return;
+  // Region from the browser language (e.g. "en-IN" -> IN) picks the price tier; no IP lookup.
+  const country = (navigator.language.split('-')[1] ?? '').toUpperCase();
+  await chrome.tabs.create({ url: `${s.apiBase}/checkout?country=${encodeURIComponent(country)}` });
+});
+
 void (async () => {
   const s = await send<Settings>({ type: 'getSettings' });
   ($('rdap') as HTMLInputElement).checked = s.rdapOptIn;
-  $('plan').textContent = s.plan === 'pro' ? 'Pro' : 'Free';
+  renderPlan(s);
   await Promise.all([load(), renderTrusted()]);
 })();

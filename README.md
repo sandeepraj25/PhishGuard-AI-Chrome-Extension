@@ -57,6 +57,8 @@ URL model size: ONNX 592 KB, 266 trees; ONNX vs LightGBM max |Δp| = 2.0e-07. So
 Feature parity (Python vs native C++ vs WASM): 1000 URLs × 26 features, **0 mismatches**. Source: `ml/results/parity.json`.
 Layer 2 page model: PR-AUC 1.000, recall@0.1%FPR 99.3% (≤0 FP of 401) on 1001 synthetic-sample pages. Source: `ml/results/page_eval.json`.
 Lead time vs public feeds: median 3.0 h ahead of the earliest public feed (p25 0.6 h, p90 11.7 h); 77% of 354 domains seen before any feed (synthetic-sample). Source: `ml/results/leadtime.json`.
+Layer 3 visual model: int8 model 887 KB (fp32 2390 KB), CPU latency p50 1.1 ms; test clone detection 55.6% at 1.6% false matches on generic pages (rule 'proto', fictional-brand synthetic data). Source: `ml/results/visual_eval.json`.
+Robustness (scripted attacks): worst attack for the shipped score: evasion_clean (recall at score > 60 99.4% → 93.6%) on 3252 synthetic-sample phishing URLs; full table in the JSON. Source: `ml/results/robustness.json`.
 <!-- RESULTS:END -->
 
 ## Repository layout

@@ -89,4 +89,26 @@ describe.each(storeFactories)('Store contract (%s)', (_name, make) => {
     await store.recordSighting('c.test', 'ct', new Date('2026-10-01T00:00:00Z'));
     expect((await store.sightings('c.test'))[0].firstSeen.toISOString()).toBe('2026-10-01T00:00:00.000Z');
   });
+
+  it('v3: licences and one-time key pickup', async () => {
+    store = await make();
+    const lic = {
+      id: 'lid1',
+      keyHash: 'k'.repeat(64),
+      plan: 'pro' as const,
+      status: 'active' as const,
+      seats: 1,
+      expiresAt: new Date('2026-12-01T00:00:00Z'),
+      paddleSubscriptionId: 'sub_1',
+      paddleCustomerId: 'ctm_1',
+      orgId: null,
+    };
+    await store.insertLicense(lic);
+    expect((await store.licenseBySubscription('sub_1'))?.id).toBe('lid1');
+    await store.updateLicense('lid1', { status: 'canceled', seats: 3 });
+    expect(await store.licenseById('lid1')).toMatchObject({ status: 'canceled', seats: 3, plan: 'pro' });
+    await store.savePickup('h'.repeat(64), 'PG1.key');
+    expect(await store.takePickup('h'.repeat(64))).toBe('PG1.key');
+    expect(await store.takePickup('h'.repeat(64))).toBeNull();
+  });
 });

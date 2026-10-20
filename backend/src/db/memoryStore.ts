@@ -3,6 +3,7 @@ import type {
   CrawlResult,
   CtCandidate,
   KnownBadRow,
+  LicenseRow,
   RdapEntry,
   ReportInput,
   ReportRow,
@@ -19,6 +20,8 @@ export class MemoryStore implements Store {
   private ct = new Map<string, CtCandidate>();
   private crawlQ = new Map<string, { status: string; attempts: number }>();
   private crawlRes = new Map<string, CrawlResult>();
+  private licenses = new Map<string, LicenseRow>();
+  private pickups = new Map<string, string>();
 
   async upsertKnownBad(domain: string, fullHash: string, source: string, at: Date) {
     const key = `${domain}\0${source}`;
@@ -136,6 +139,29 @@ export class MemoryStore implements Store {
     const key = `${domain}\0${source}`;
     const prev = this.seen.get(key);
     if (!prev || at < prev) this.seen.set(key, at);
+  }
+  async insertLicense(l: LicenseRow) {
+    this.licenses.set(l.id, { ...l });
+  }
+  async updateLicense(id: string, patch: Partial<Omit<LicenseRow, 'id' | 'keyHash'>>) {
+    const l = this.licenses.get(id);
+    if (l) Object.assign(l, patch);
+  }
+  async licenseById(id: string) {
+    const l = this.licenses.get(id);
+    return l ? { ...l } : null;
+  }
+  async licenseBySubscription(sub: string) {
+    const l = [...this.licenses.values()].find((x) => x.paddleSubscriptionId === sub);
+    return l ? { ...l } : null;
+  }
+  async savePickup(h: string, key: string) {
+    this.pickups.set(h, key);
+  }
+  async takePickup(h: string) {
+    const k = this.pickups.get(h) ?? null;
+    this.pickups.delete(h);
+    return k;
   }
   async close() {}
 }

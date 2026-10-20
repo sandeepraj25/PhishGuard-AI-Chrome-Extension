@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -56,7 +57,10 @@ def main() -> None:
     assert_no_leakage(split)
     Xtr, ytr = featurize(split.train, args.host_only)
     Xva, yva = featurize(split.val, args.host_only)
-    booster = train_lgbm(Xtr, ytr, Xva, yva)
+    # Optional LightGBM overrides (used by retrain.py tests to produce a deliberately weak model).
+    overrides = json.loads(os.environ.get("PHISHGUARD_LGB_OVERRIDES", "{}") or "{}")
+    rounds = int(overrides.pop("_rounds", 600))
+    booster = train_lgbm(Xtr, ytr, Xva, yva, rounds=rounds, params=overrides)
 
     out = args.out_dir
     out.mkdir(parents=True, exist_ok=True)

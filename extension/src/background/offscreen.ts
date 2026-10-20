@@ -2,6 +2,7 @@
 import type { PageScore } from '../lib/pagescore';
 import type { RawPageSignals } from '../lib/pagefeatures';
 import type { OffscreenRequest, WorkerReply } from '../offscreen/protocol';
+import type { VisualRequest, VisualResult } from '../lib/visualscore';
 
 const PATH = 'src/offscreen/offscreen.html';
 let creating: Promise<void> | null = null;
@@ -45,6 +46,18 @@ export async function scorePage(raw: RawPageSignals): Promise<PageScore | null> 
   try {
     const reply = await ask({ target: 'offscreen', kind: 'page', raw }, 8000);
     return reply.ok && reply.page ? reply.page : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Layer 3: screenshot of the visible tab + form rectangle -> gallery match, or null. */
+export async function scoreVisual(
+  req: Omit<VisualRequest, 'png'> & { pngDataUrl: string },
+): Promise<VisualResult | null> {
+  try {
+    const reply = await ask({ target: 'offscreen', kind: 'visual', req }, 10000);
+    return reply.ok && reply.visual ? reply.visual : null;
   } catch {
     return null;
   }

@@ -82,6 +82,15 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 - **Problem:** if training extracts page features in Python and the extension in TypeScript, they drift.
 - **Fix:** the feature code exists only in TypeScript; training runs it on jsdom. Same idea as the C++/WASM URL extractor, cheaper because jsdom exists.
 
+### 3.10 Visual embedding model
+- **What:** MobileNetV3-small (depthwise-separable convolutions) → 128-number embedding → compare with reference embeddings. Prototype rule = softmax over learned brand vectors (+ "other").
+- **Real-life example:** a bank teller who knows what the real cheque book looks like and spots a copy by its logo and colours, not by reading every word.
+- **Cost:** one forward pass is about a millisecond on server CPU (int8, see `latency_ms` in `ml/results/visual_eval.json`); in the browser PNG decode + crop + ORT Web add noticeably more (the extension logs `latencyMs` per check); gallery comparison O(B·d) for B brands, d = 128. Runs only in the grey zone, so most page visits never pay it.
+- **Size:** int8 887 KB vs fp32 2.4 MB (static QDQ quantisation with calibration images).
+
+### 3.11 Licence keys
+- HMAC-SHA256 signed keys verified only on the server (the secret never ships), plus a database status check so cancellations take effect; one-time key pickup via a random claim token passed through Paddle `customData`; webhook signatures checked with a 5-minute replay window and constant-time comparison.
+
 ## 4. Mistakes found and fixed (good interview stories)
 
 1. **Label leakage from data sources.** Tranco gives bare domains (`https://site.com/`), phishing feeds give full URLs with paths. A model would learn "has a path ⇒ phishing". Fix: `--host-only` mode for training/eval when legit data has no paths, a warning in `clean_dedupe.py`, and a recommendation to add a legit source with real paths.
@@ -95,7 +104,13 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 9. **The most important reason was hidden.** On the form-action fixture, SHAP ranked "links lead nowhere" above "your password is sent to attacker-example.test". Users act on concrete facts, so verifiable "hard evidence" reasons are now pinned first, and reasons from all layers are merged by weight (before: page reasons always came before URL reasons).
 10. **ONNX Runtime proxy worker** would have re-executed our offscreen page script inside a worker (no `chrome.*` there). Fixed by owning the worker.
 11. **Undo in the labeling CLI** only worked when there was a *next* URL to show; an undo on the last item was silently ignored. Rewrote the loop around an index so undo always returns to the previous item.
-12. **Synthetic data is too easy.** PR-AUC 1.000 on the synthetic sample only shows the model learned the generator's templates. The README says so in a warning box generated from the result JSON's `dataset` field.
+12. **BatchNorm momentum.** Visual model training loss fell but validation accuracy was frozen at the share of the "other" class (it always predicted "other"). torchvision's MobileNetV3 uses BN momentum 0.01, so after ~300 steps the running statistics still reflected random early weights. Fix: recalibrate BN statistics with the final weights.
+13. **Balanced sampling backfired.** Equal sampling per class showed the diverse "other" class only 1/7 of the time, so many unrelated login pages were matched to a brand (found with an ad-hoc diagnostic, not a committed metric). Square-root re-weighting plus "decoy" negatives (other organisations using the same colours) fixed most of it.
+14. **Anisotropic embeddings.** Raw cosine similarity was very close to 1 between almost any two pages, so a gallery threshold could not separate anything. Centring helped little; the shipped rule is chosen on validation between nearest-neighbour and learned prototypes.
+15. **`captureVisibleTab` needs `<all_urls>`.** The http/https host patterns are not enough — the screenshot silently failed until the e2e test logged the error.
+16. **"Visited before" race.** Navigation scoring marked the site as seen, then the password-moment verdict a second later counted that as a *previous* visit and subtracted 25 points. Now a mark must be at least an hour old.
+17. **Robustness surprise.** Homoglyph swaps *raised* recall for the rules baseline (they trigger the look-alike rule); the most damaging attack is plain evasion — removing scary words and moving to `.com`.
+18. **Synthetic data is too easy.** PR-AUC 1.000 on the synthetic sample only shows the model learned the generator's templates. The README says so in a warning box generated from the result JSON's `dataset` field.
 
 ---
 
@@ -115,4 +130,5 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 2. Damerau–Levenshtein (transpositions cost 1) and keyboard-adjacency typos.
 3. Custom ONNX Runtime build with only the ML operators to cut the 14 MB runtime.
 4. Calibrate probabilities (isotonic regression on the validation split) so "score 70" means ~70 % risk.
-5. Measure warning click-through and false-positive reports per 1,000 warnings (privacy-preserving, aggregate only).
+5. Visual model: start from pretrained ImageNet weights and a real gallery; current clone detection on synthetic data is modest (see `ml/results/visual_eval.json`).
+6. Measure warning click-through and false-positive reports per 1,000 warnings (privacy-preserving, aggregate only).

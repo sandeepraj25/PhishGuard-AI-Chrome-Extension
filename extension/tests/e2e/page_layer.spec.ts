@@ -1,6 +1,8 @@
-import { expect, test } from './fixtures';
+import { enablePro, expect, test } from './fixtures';
 
-test.describe('Layer 2 page model (offscreen document)', () => {
+test.describe('Layer 2 page model (offscreen document, Pro)', () => {
+  test.beforeEach(async ({ sw }) => enablePro(sw));
+
   test('form-action mismatch on a neutral URL triggers the overlay with a page reason', async ({ context, sw }) => {
     const page = await context.newPage();
     await page.goto('http://www.cedarlabs.test/members');
@@ -37,7 +39,7 @@ test.describe('Layer 2 page model (offscreen document)', () => {
       >;
       return Object.values(all).find((x) => x.url === 'http://portal.cedarlabs.test/members/');
     });
-    expect(v?.layers).toEqual(['url', 'page']);
+    expect(v?.layers.slice(0, 2)).toEqual(['url', 'page']); // Layer 3 may also run (grey zone)
     expect(v?.score).toBeLessThanOrEqual(30);
   });
 });

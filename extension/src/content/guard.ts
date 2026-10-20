@@ -4,7 +4,7 @@
  * card / OTP field, it asks the service worker for this page's verdict and, if the score is
  * above 30, shows the warning overlay. One overlay per page load at most.
  */
-import type { Message, PageSignals, Verdict } from '../lib/types';
+import type { FormGeometry, Message, PageSignals, Verdict } from '../lib/types';
 import { collectPageSignals } from './page';
 import { eventTarget, isSensitiveField } from './detect';
 import { closeOverlay, isOverlayOpen, showOverlay } from './overlay';
@@ -27,7 +27,13 @@ async function onSensitive(field: HTMLInputElement): Promise<void> {
     } catch {
       page = undefined;
     }
-    const v = await send<Verdict | null>({ type: 'getVerdict', url: location.href, page, sensitive: true });
+    const box = (field.form ?? field).getBoundingClientRect();
+    const form: FormGeometry = {
+      rect: { x: box.x, y: box.y, width: box.width, height: box.height },
+      viewport: { width: innerWidth, height: innerHeight },
+      dpr: devicePixelRatio,
+    };
+    const v = await send<Verdict | null>({ type: 'getVerdict', url: location.href, page, sensitive: true, form });
     handled = true;
     if (!v || v.score <= SHOW_ABOVE || v.trusted) return;
     document.documentElement.dataset.phishguardShown = String(v.score); // test hook, no secrets

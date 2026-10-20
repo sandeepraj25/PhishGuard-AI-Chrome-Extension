@@ -23,6 +23,9 @@ export const PAGES: Record<string, string> = {
   'http://news.example.test/article/123': 'plain_article.html',
   'http://www.cedarlabs.test/members': 'members_form_mismatch.html',
   'http://portal.cedarlabs.test/members/': 'members_ok.html',
+  // Grey-zone URLs (URL model ~30-35 on the synthetic-trained model) for the Layer 3 tests.
+  'http://my-portal.test/auth/login': 'examplebank_visual_clone.html',
+  'http://web-login.test/auth/login': 'members_ok.html',
 };
 
 if (!existsSync(resolve(EXT, 'manifest.json'))) {
@@ -64,4 +67,21 @@ export async function storedVerdicts(sw: Worker): Promise<Record<string, { score
   return sw.evaluate(
     async () => (await chrome.storage.session.get(null)) as Record<string, { score: number; url: string }>,
   );
+}
+
+/** Mark this browser as Pro (as if the licence server had confirmed it a moment ago). */
+export async function enablePro(sw: Worker): Promise<void> {
+  await sw.evaluate(async () => {
+    const { settings } = await chrome.storage.local.get('settings');
+    const exp = new Date(Date.now() + 30 * 86_400_000).toISOString();
+    await chrome.storage.local.set({
+      settings: {
+        ...(settings ?? {}),
+        plan: 'pro',
+        licenseKey: 'PG1.test',
+        licenseExpiresAt: exp,
+        licenseCheckedAt: Date.now(),
+      },
+    });
+  });
 }

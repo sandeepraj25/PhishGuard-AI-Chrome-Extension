@@ -1,0 +1,47 @@
+{
+  "notes": "FICTIONAL brands used by the visual model demo gallery and tests. Replace with real official login-page captures in production (docs/HUMAN_TODO.md).",
+  "brands": [
+    {
+      "id": "examplebank",
+      "name": "ExampleBank",
+      "official_domains": [
+        "examplebank.test"
+      ]
+    },
+    {
+      "id": "lumorabank",
+      "name": "Lumora Bank",
+      "official_domains": [
+        "lumorabank.test"
+      ]
+    },
+    {
+      "id": "quillpay",
+      "name": "Quillpay",
+      "official_domains": [
+        "quillpay.test"
+      ]
+    },
+    {
+      "id": "parcelix",
+      "name": "Parcelix Courier",
+      "official_domains": [
+        "parcelix.test"
+      ]
+    },
+    {
+      "id": "civicportal",
+      "name": "Civic Portal",
+      "official_domains": [
+        "civicportal.test"
+      ]
+    },
+    {
+      "id": "mailora",
+      "name": "Mailora",
+      "official_domains": [
+        "mailora.test"
+      ]
+    }
+  ]
+}

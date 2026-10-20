@@ -32,6 +32,13 @@ Grouped by urgency. Each item says where the code expects the result.
 - [ ] Recruit regional labelers (Hindi/English for India; pt-BR; id; es) and decide the dataset licence (`ml/datasets/regional/README.md`).
 - [ ] Replace the synthetic page dataset with crawled + labeled pages and re-run `make pages`.
 
+## Phase v3 (Pro)
+- [ ] **Capture the real reference gallery**: official login pages of the brands you protect (your own screenshots of the official sites, at 1280x800), then build the gallery with the same pipeline. The shipped gallery uses fictional brands only.
+- [ ] Use **pretrained weights** for the visual backbone (ImageNet MobileNetV3-small) — the build machine could not download them; training from scratch on synthetic pages is only a demonstration.
+- [ ] Paddle: create the product + three monthly prices (Tier 1/2/3), set `PADDLE_*` env vars, `PADDLE_CLIENT_TOKEN`, webhook URL `https://<api>/v1/paddle/webhook`, and decide Tier countries in `backend/config/pricing.json`.
+- [ ] Email the licence key to customers as a backup to the on-screen pickup (needs your email provider).
+- [ ] Add GitHub secrets for the weekly retrain workflow (`PHISHTANK_APP_KEY`, `OPENPHISH_PREMIUM_URL`, `ADMIN_TOKEN`, repo variable `API_BASE`).
+
 ## Legal / policy
 - [ ] Re-check every feed licence in `docs/data_licenses.md`. **Blocking:** OpenPhish community feed is non-commercial; the default Tranco list includes CC BY-NC data; confirm PhishTank allows redistributing a derived Bloom filter.
 - [ ] Have the privacy policy draft (`docs/privacy_policy.md`) reviewed and host it at a public URL (the Web Store requires one).

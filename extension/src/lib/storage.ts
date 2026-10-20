@@ -8,7 +8,14 @@
 import { DEFAULT_API_BASE } from './config';
 import type { Settings, Verdict } from './types';
 
-const DEFAULT_SETTINGS: Settings = { apiBase: DEFAULT_API_BASE, rdapOptIn: false, plan: 'free', licenseKey: '' };
+const DEFAULT_SETTINGS: Settings = {
+  apiBase: DEFAULT_API_BASE,
+  rdapOptIn: false,
+  plan: 'free',
+  licenseKey: '',
+  licenseExpiresAt: '',
+  licenseCheckedAt: 0,
+};
 const SEEN_LIMIT = 5000;
 
 export async function getSettings(): Promise<Settings> {
@@ -40,14 +47,19 @@ export async function setTrusted(domain: string, on: boolean): Promise<string[]>
  * "Visited before with no warning": we keep SHA-256 hashes of registered domains (never
  * plain names, never URLs), most recent SEEN_LIMIT only, on this device only.
  */
-export async function wasSeen(domainHash: string): Promise<boolean> {
+/** A mark from the current visit does not count: "seen before" means an EARLIER visit. */
+export const SEEN_MIN_AGE_MS = 60 * 60 * 1000;
+
+export async function wasSeen(domainHash: string, now = Date.now()): Promise<boolean> {
   const { seen } = await chrome.storage.local.get('seen');
-  return Boolean((seen as Record<string, number> | undefined)?.[domainHash]);
+  const t = (seen as Record<string, number> | undefined)?.[domainHash];
+  return t !== undefined && now - t >= SEEN_MIN_AGE_MS;
 }
 
 export async function markSeen(domainHash: string): Promise<void> {
   const { seen } = await chrome.storage.local.get('seen');
   const map = (seen as Record<string, number> | undefined) ?? {};
+  if (map[domainHash] !== undefined) return; // keep the FIRST visit time (needed by wasSeen)
   map[domainHash] = Date.now();
   // Keep only the most recent SEEN_LIMIT entries.
   const kept = Object.entries(map)

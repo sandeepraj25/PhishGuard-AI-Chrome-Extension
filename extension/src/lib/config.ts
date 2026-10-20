@@ -12,3 +12,9 @@ export const BLOOM_ONLY_FLOOR = 80;
 export const SEEN_BEFORE_BONUS = 25;
 /** A domain on the user's trusted list never scores above this (unless confirmed known-bad). */
 export const TRUSTED_CAP = 5;
+
+/** Layer 3 runs only when Layers 1-2 are unsure: combined score within [GREY_LO, GREY_HI]. */
+export const VISUAL_GREY_LO = 20;
+export const VISUAL_GREY_HI = 70;
+/** Minimum score once the visual model says "looks like brand X" on a non-official domain. */
+export const VISUAL_FLOOR = 72;

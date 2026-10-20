@@ -23,6 +23,7 @@ Nothing else. Verified by `extension/tests/e2e/fullstack.spec.ts`, which inspect
 - Trusted list (`chrome.storage.local`).
 - "Visited before without warning": **SHA-256 hashes** of registered domains, most recent 5,000, never plain names, never URLs.
 - Per-tab verdicts (`chrome.storage.session`, cleared when the browser closes).
+- **Layer 3 screenshots (Pro):** taken only in the grey zone at the password moment, cropped and turned into a 128-number embedding inside the offscreen worker, then discarded. Never written to disk, never sent.
 
 ## Server-side
 
