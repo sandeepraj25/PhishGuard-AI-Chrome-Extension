@@ -51,7 +51,7 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 - **What:** map every character to a "prototype" (Cyrillic 'а' → 'a', '0' → 'o', '1' → 'l', "rn" → "m", "vv" → "w"), on both the host and the brand token, then compare.
 - **Real-life example:** reading a handwritten note where "rn" and "m" look the same — you normalise both to one shape before comparing.
 - **Steps:** punycode-decode `xn--` labels (RFC 3492) → map code points via `shared/confusables.json` → ASCII rules → substring/part match against brand skeletons.
-- **Time:** O(L) per label with hash-map lookups (L = label length); brand comparison O(B·L) for B tokens (B ≈ 150). **Space:** O(size of map) ≈ 354 entries.
+- **Time:** O(L) per label with hash-map lookups (L = label length); brand comparison O(B·L) for B brand tokens (94 in `shared/brands.json`). **Space:** O(size of map) ≈ 354 entries.
 - **Mixed-script detection** (Latin + Cyrillic in one label) is O(L) and is a very strong signal.
 
 ### 3.4 Public Suffix List lookup
@@ -112,7 +112,7 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 9. **The most important reason was hidden.** On the form-action fixture, SHAP ranked "links lead nowhere" above "your password is sent to attacker-example.test". Users act on concrete facts, so verifiable "hard evidence" reasons are now pinned first, and reasons from all layers are merged by weight (before: page reasons always came before URL reasons).
 10. **ONNX Runtime proxy worker** would have re-executed our offscreen page script inside a worker (no `chrome.*` there). Fixed by owning the worker.
 11. **Undo in the labeling CLI** only worked when there was a *next* URL to show; an undo on the last item was silently ignored. Rewrote the loop around an index so undo always returns to the previous item.
-12. **BatchNorm momentum.** Visual model training loss fell but validation accuracy was frozen at the share of the "other" class (it always predicted "other"). torchvision's MobileNetV3 uses BN momentum 0.01, so after ~300 steps the running statistics still reflected random early weights. Fix: recalibrate BN statistics with the final weights.
+12. **BatchNorm momentum.** Visual model training loss fell but validation accuracy was frozen at the share of the "other" class (it always predicted "other"). torchvision's MobileNetV3 uses BN momentum 0.01, so after a short run (a few hundred steps in the first experiment) the running statistics still reflected random early weights. Fix: recalibrate BN statistics with the final weights.
 13. **Balanced sampling backfired.** Equal sampling per class showed the diverse "other" class only 1/7 of the time, so many unrelated login pages were matched to a brand (found with an ad-hoc diagnostic, not a committed metric). Square-root re-weighting plus "decoy" negatives (other organisations using the same colours) fixed most of it.
 14. **Anisotropic embeddings.** Raw cosine similarity was very close to 1 between almost any two pages, so a gallery threshold could not separate anything. Centring helped little; the shipped rule is chosen on validation between nearest-neighbour and learned prototypes.
 15. **`captureVisibleTab` needs `<all_urls>`.** The http/https host patterns are not enough — the screenshot silently failed until the e2e test logged the error.
