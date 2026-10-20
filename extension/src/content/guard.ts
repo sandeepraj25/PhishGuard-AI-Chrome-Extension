@@ -23,7 +23,7 @@ async function onSensitive(field: HTMLInputElement): Promise<void> {
   try {
     let page: PageSignals | undefined;
     try {
-      page = collectPageSignals(document, location.href, field);
+      page = collectPageSignals(document, location.href);
     } catch {
       page = undefined;
     }

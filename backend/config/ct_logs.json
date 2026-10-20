@@ -1,0 +1,8 @@
+{
+  "notes": "RFC 6962 CT logs to poll. Log URLs rotate (temporal shards per half-year) — refresh from Chrome's list https://www.gstatic.com/ct/log_list/v3/log_list.json every few months (docs/HUMAN_TODO.md). Logs that only offer the newer static-ct-api (tiles) need a different client (future work).",
+  "logs": [
+    { "name": "google-argon2026h2", "url": "https://ct.googleapis.com/logs/us1/argon2026h2/", "enabled": true },
+    { "name": "google-xenon2026h2", "url": "https://ct.googleapis.com/logs/eu1/xenon2026h2/", "enabled": true },
+    { "name": "cloudflare-nimbus2026", "url": "https://ct.cloudflare.com/logs/nimbus2026/", "enabled": true }
+  ]
+}

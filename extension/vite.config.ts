@@ -8,6 +8,7 @@ import { defineConfig } from 'vite';
  */
 export default defineConfig({
   publicDir: 'public',
+  worker: { format: 'es' },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -19,6 +20,7 @@ export default defineConfig({
         sw: resolve(__dirname, 'src/background/sw.ts'),
         popup: resolve(__dirname, 'src/popup/popup.html'),
         block: resolve(__dirname, 'src/block/block.html'),
+        offscreen: resolve(__dirname, 'src/offscreen/offscreen.html'),
       },
       output: {
         entryFileNames: (chunk) => (chunk.name === 'sw' ? 'sw.js' : 'assets/[name]-[hash].js'),

@@ -3,9 +3,9 @@ PY ?= python3
 PG_TEST_DB ?= postgres://postgres@127.0.0.1:55432/phishguard_test
 PG_TEST_REDIS ?= redis://127.0.0.1:56379/1
 
-.PHONY: all shared wasm wasm-test wasm-emscripten data train eval parity bloom ext ext-test e2e backend-test ml-test readme test lint
+.PHONY: all shared wasm wasm-test wasm-emscripten data train eval parity bloom pages leadtime ext ext-test e2e backend-test ml-test readme test lint
 
-all: shared wasm data train eval bloom parity ext test readme
+all: shared wasm data train eval bloom parity pages leadtime ext test readme
 
 shared:            ## regenerate derived shared data (PSL ASCII + confusables)
 	$(PY) ml/scripts/build_psl.py
@@ -35,6 +35,16 @@ bloom:
 
 parity:
 	$(PY) ml/scripts/parity_test.py
+
+pages:             ## Layer 2: synthetic pages -> TS featuriser (jsdom) -> LightGBM -> ONNX -> eval
+	$(PY) ml/scripts/make_sample_pages.py
+	cd extension && npx tsx scripts/page_features.ts ../ml/data/pages/pages.jsonl ../ml/data/pages/page_features.csv
+	$(PY) ml/scripts/train_page.py
+	$(PY) ml/scripts/eval_page.py
+
+leadtime:          ## lead time vs public feeds (sample data; real data: GET /v1/admin/leadtime.csv)
+	$(PY) ml/scripts/make_sample_leadtime.py
+	$(PY) ml/scripts/eval_leadtime.py
 
 ext:
 	cd extension && npm run build

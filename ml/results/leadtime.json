@@ -1,0 +1,38 @@
+{
+  "script": "ml/scripts/eval_leadtime.py",
+  "generated_at": "2026-10-20T04:39:20+00:00",
+  "git_commit": "c5f2e3a-dirty",
+  "dataset": "synthetic-sample",
+  "data_file": "ml/data/leadtime/leadtime_sample.csv",
+  "data_sha256": "93430b83e8aa7a6f",
+  "domains_seen_by_us": 428,
+  "domains_also_in_feeds": 354,
+  "never_in_feeds": 74,
+  "vs_earliest_feed": {
+    "n": 354,
+    "median_hours_ahead": 2.988995931111111,
+    "p25": 0.6243421386805555,
+    "p75": 7.137360915138888,
+    "p90": 11.732676912333332,
+    "fraction_before_feed": 0.7711864406779662
+  },
+  "per_feed": {
+    "openphish-community": {
+      "n": 266,
+      "median_hours_ahead": 4.712827389861111,
+      "p25": 1.5467572920833332,
+      "p75": 9.316967834305554,
+      "p90": 16.29265163680555,
+      "fraction_before_feed": 0.8383458646616542
+    },
+    "phishtank": {
+      "n": 275,
+      "median_hours_ahead": 5.387866796944444,
+      "p25": 1.7783987008333333,
+      "p75": 10.936173685694445,
+      "p90": 19.159346653499995,
+      "fraction_before_feed": 0.84
+    }
+  },
+  "summary_line": "median 3.0 h ahead of the earliest public feed (p25 0.6 h, p90 11.7 h); 77% of 354 domains seen before any feed (synthetic-sample)."
+}

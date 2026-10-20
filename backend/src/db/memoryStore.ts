@@ -1,4 +1,13 @@
-import type { BloomVersion, KnownBadRow, RdapEntry, ReportInput, ReportRow, Store } from './store';
+import type {
+  BloomVersion,
+  CrawlResult,
+  CtCandidate,
+  KnownBadRow,
+  RdapEntry,
+  ReportInput,
+  ReportRow,
+  Store,
+} from './store';
 
 export class MemoryStore implements Store {
   private bad = new Map<string, KnownBadRow>();
@@ -6,6 +15,10 @@ export class MemoryStore implements Store {
   private reports: ReportRow[] = [];
   private rdap = new Map<string, RdapEntry>();
   private blooms: BloomVersion[] = [];
+  private ctIndex = new Map<string, number>();
+  private ct = new Map<string, CtCandidate>();
+  private crawlQ = new Map<string, { status: string; attempts: number }>();
+  private crawlRes = new Map<string, CrawlResult>();
 
   async upsertKnownBad(domain: string, fullHash: string, source: string, at: Date) {
     const key = `${domain}\0${source}`;
@@ -77,6 +90,52 @@ export class MemoryStore implements Store {
   }
   async latestBloom() {
     return this.blooms.at(-1) ?? null;
+  }
+  async getCtIndex(logUrl: string) {
+    return this.ctIndex.get(logUrl) ?? null;
+  }
+  async setCtIndex(logUrl: string, next: number) {
+    this.ctIndex.set(logUrl, next);
+  }
+  async upsertCtCandidate(c: Omit<CtCandidate, 'verdict'>) {
+    const prev = this.ct.get(c.domain);
+    if (!prev) {
+      this.ct.set(c.domain, { ...c, verdict: 'unreviewed' });
+      return 'inserted' as const;
+    }
+    if (c.firstSeen < prev.firstSeen) prev.firstSeen = c.firstSeen;
+    prev.certNames = [...new Set([...prev.certNames, ...c.certNames])].slice(0, 50);
+    return 'updated' as const;
+  }
+  async listCtCandidates(limit: number) {
+    return [...this.ct.values()].sort((a, b) => b.firstSeen.getTime() - a.firstSeen.getTime()).slice(0, limit);
+  }
+  async enqueueCrawl(domain: string) {
+    if (!this.crawlQ.has(domain)) this.crawlQ.set(domain, { status: 'pending', attempts: 0 });
+  }
+  async takeCrawlJobs(limit: number, maxAttempts: number) {
+    const out: string[] = [];
+    for (const [d, j] of this.crawlQ) {
+      if (out.length >= limit) break;
+      if (j.status === 'pending' && j.attempts < maxAttempts) {
+        j.attempts++;
+        out.push(d);
+      }
+    }
+    return out;
+  }
+  async finishCrawl(r: CrawlResult) {
+    this.crawlRes.set(r.domain, r);
+    const j = this.crawlQ.get(r.domain);
+    if (j) j.status = r.error ? (j.attempts >= 3 ? 'failed' : 'pending') : 'done';
+  }
+  async getCrawlResult(domain: string) {
+    return this.crawlRes.get(domain) ?? null;
+  }
+  async recordSighting(domain: string, source: string, at: Date) {
+    const key = `${domain}\0${source}`;
+    const prev = this.seen.get(key);
+    if (!prev || at < prev) this.seen.set(key, at);
   }
   async close() {}
 }

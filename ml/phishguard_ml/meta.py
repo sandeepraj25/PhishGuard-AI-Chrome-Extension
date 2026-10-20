@@ -23,6 +23,8 @@ def file_sha256(path: Path) -> str:
 
 
 def run_meta(script: str, data_path: Path, dataset_kind: str) -> dict:
+    data_path = data_path.resolve()
+    rel = str(data_path.relative_to(REPO)) if data_path.is_relative_to(REPO) else str(data_path)
     return {"script": script, "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-            "git_commit": git_commit(), "dataset": dataset_kind, "data_file": str(data_path.relative_to(REPO)),
+            "git_commit": git_commit(), "dataset": dataset_kind, "data_file": rel,
             "data_sha256": file_sha256(data_path)}

@@ -17,6 +17,8 @@ Nothing else. Verified by `extension/tests/e2e/fullstack.spec.ts`, which inspect
 
 ## What stays on the device
 
+- **Layer 2 page signals** (form summary, link/resource hostnames, title, a 5,000-character text sample) go from the content script to the extension's own offscreen document and are discarded after scoring. They never leave the device.
+
 - Feature extraction, all three models, scoring and reasons.
 - Trusted list (`chrome.storage.local`).
 - "Visited before without warning": **SHA-256 hashes** of registered domains, most recent 5,000, never plain names, never URLs.
@@ -37,3 +39,7 @@ Nothing else. Verified by `extension/tests/e2e/fullstack.spec.ts`, which inspect
 | Phishing page removes our overlay | Overlay re-inserts itself while open (MutationObserver); keystrokes are kept out of the page while it is open. |
 | Phishing page reads our overlay text | Text contains only facts about the page's own URL. |
 | Malicious report flood | Rate limit (10/min/client), schema validation, review queue before any retraining use. |
+
+## Server-side discovery (v2)
+
+The CT worker and crawler look at **public** certificates and public web pages of *candidate phishing domains*. They never process anything about users. Crawling runs in an isolated container without credentials (see HUMAN_TODO).

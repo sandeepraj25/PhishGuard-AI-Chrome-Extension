@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis';
 
+import { adminRoutes } from './api/admin';
 import { buildApp } from './app';
 import { loadConfig } from './config';
 import { MemoryStore } from './db/memoryStore';
@@ -24,6 +25,7 @@ const app = await buildApp({
   checkRateLimitPerMinute: cfg.checkRateLimitPerMinute,
   reportRateLimitPerMinute: cfg.reportRateLimitPerMinute,
   logLevel: cfg.logLevel,
+  plugins: process.env.ADMIN_TOKEN ? [adminRoutes(store, process.env.ADMIN_TOKEN)] : [],
 });
 await app.listen({ port: cfg.port, host: cfg.host });
 

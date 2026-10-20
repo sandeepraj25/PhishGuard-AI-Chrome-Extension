@@ -80,3 +80,43 @@ Chrome may stop the service worker at any time. Therefore:
 ## 7. Backend data model (v1)
 
 `known_bad_domains` (registered domain, full hash, 4-byte prefix, first/last seen, sources), `domain_sightings` (first time each source reported a domain — used for lead-time), `reports` (review queue; registered domain only), `rdap_cache`, `bloom_versions`. **No table stores URLs, IP addresses or browsing history.**
+
+## 8. Phase v2 additions
+
+### Layer 2 — page model (offscreen document)
+
+```mermaid
+flowchart LR
+  CS["Content script<br/>collectRaw(document)"] -- "raw signals (hostnames, title, text sample, form summary)" --> SW
+  SW["Service worker"] -- "chrome.runtime message<br/>target: offscreen" --> OFF["Offscreen document<br/>(reason: WORKERS)"]
+  OFF -- postMessage --> WK["Dedicated worker<br/>WASM (registered domains) +<br/>finalizePageFeatures + ONNX + TreeSHAP"]
+  WK --> OFF --> SW
+```
+
+- Runs only at the password moment (a sensitive field is focused), never on plain browsing.
+- **One implementation of page features** (`extension/src/lib/pagefeatures.ts`): `collectRaw` uses only DOM APIs that jsdom also supports, so training (`extension/scripts/page_features.ts` on jsdom) and inference use the same code — no Python mirror, no skew.
+- Why our own worker and not ONNX Runtime's `proxy` option: ORT's proxy re-loads *its own script URL* as the worker, which after bundling is our offscreen page script (that calls `chrome.*`, unavailable in workers).
+- Combination: `P = max(P_url, P_page)`, plus page hard-rule floors (password form posting to an unrelated domain while the title claims a brand → ≥ 70).
+- Reasons from both layers are merged by weight (both are SHAP log-odds). "Hard evidence" (form posts your password elsewhere; mailto/IP action) is pinned first.
+
+### Certificate Transparency discovery
+
+```mermaid
+flowchart LR
+  LOGS["CT logs (RFC 6962)<br/>get-sth / get-entries"] --> CT["CT worker<br/>MerkleTreeLeaf → DER → SAN names"]
+  CT --> F{"brand signal?<br/>(WASM features)"}
+  F -- no --> X["dropped (not stored)"]
+  F -- yes --> C[("ct_candidates<br/>first_seen = CT timestamp")]
+  C --> Q[("crawl_queue")] --> CR["Crawler<br/>HTML (+ screenshot)"] --> R[("crawl_results")]
+  C --> S[("domain_sightings<br/>source = ct")]
+  FEEDS["Public feeds"] --> S2[("domain_sightings<br/>source = feed")]
+  S & S2 --> LT["/v1/admin/leadtime.csv → eval_leadtime.py"]
+```
+
+- Pre-certificate entries contain only the TBSCertificate, which `node:crypto` cannot parse, so `backend/src/lib/der.ts` is a ~100-line bounds-checked DER reader (fuzzed with random bytes in tests).
+- Only domains with a brand signal are stored (privacy + volume: CT logs carry millions of certificates per day).
+- `crawl_queue` uses `FOR UPDATE SKIP LOCKED` so several crawler replicas never take the same job.
+
+### Review queue → retraining
+
+`Report mistake` → `/v1/report` (pending) → admin review (`/v1/admin/reports/:id/review`, bearer `ADMIN_TOKEN`) → `/v1/admin/reports/export` → `ml/scripts/import_reviews.py` → `train_url.py --extra`. Regional labels follow the same path via `label_cli.py export`.

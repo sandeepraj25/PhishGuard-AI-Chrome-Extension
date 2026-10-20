@@ -1,0 +1,67 @@
+{
+  "script": "ml/scripts/train_page.py",
+  "generated_at": "2026-10-20T04:27:31+00:00",
+  "git_commit": "c5f2e3a-dirty",
+  "dataset": "synthetic-sample",
+  "data_file": "ml/data/pages/page_features.csv",
+  "data_sha256": "b07acb861f9b6b5a",
+  "split": {
+    "train": {
+      "rows": 3249,
+      "phishing": 985,
+      "domains": 1363,
+      "first_seen_min": "2025-01-01",
+      "first_seen_max": "2026-09-30"
+    },
+    "val": {
+      "rows": 750,
+      "phishing": 415,
+      "domains": 627,
+      "first_seen_min": "2025-09-13",
+      "first_seen_max": "2026-09-30"
+    },
+    "test": {
+      "rows": 1001,
+      "phishing": 600,
+      "domains": 928,
+      "first_seen_min": "2026-02-10",
+      "first_seen_max": "2026-09-30"
+    },
+    "method": "grouped-by-registered-domain + time-ordered (domain first_seen)"
+  },
+  "best_iteration": 300,
+  "num_trees": 300,
+  "model_bytes": {
+    "onnx": 267677,
+    "trees_json": 275914
+  },
+  "onnx_vs_lightgbm": {
+    "max_abs_diff": 1.3608998794545357e-07,
+    "rows": 750
+  },
+  "feature_importance_gain": {
+    "null_link_ratio": 23481.493411183346,
+    "brand_in_title_not_official": 5453.236932500498,
+    "external_link_ratio": 4131.0169973426655,
+    "urgency_phrase_count": 1403.046004470525,
+    "num_links": 882.1881294417685,
+    "num_brands_mentioned": 485.9375697616488,
+    "text_length": 364.9858289108247,
+    "form_action_unusual_scheme": 353.5871817335719,
+    "external_resource_ratio": 158.4953778126146,
+    "num_iframes": 37.826426936429925,
+    "resources_from_brand_domain": 35.84278498607455,
+    "context_menu_blocked": 14.115890166256577,
+    "autocomplete_off_password": 11.976005423115566,
+    "num_card_fields": 9.456572926254012,
+    "hidden_iframes": 3.4879153445363045,
+    "form_get_with_password": 3.4071735134348273,
+    "num_otp_fields": 0.4040400548838079,
+    "form_action_to_official": 0.2266889598686248,
+    "num_password_fields": 0.09922246169298887,
+    "num_inputs": 0.02126936917193234,
+    "brand_in_text_not_official": 0.018185600638389587,
+    "form_action_external": 0.003499447979265824,
+    "num_forms": 0.0
+  }
+}

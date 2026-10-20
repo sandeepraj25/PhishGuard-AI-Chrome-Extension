@@ -42,6 +42,26 @@ export interface BloomVersion {
   createdAt: Date;
 }
 
+export interface CtCandidate {
+  domain: string;
+  firstSeen: Date;
+  certNames: string[];
+  brand: string;
+  signal: 'host' | 'homoglyph' | 'edit';
+  logUrl: string;
+  verdict: 'unreviewed' | 'phishing' | 'legit';
+}
+
+export interface CrawlResult {
+  domain: string;
+  fetchedAt: Date;
+  httpStatus: number | null;
+  finalUrl: string | null;
+  html: string | null;
+  screenshotPath: string | null;
+  error: string | null;
+}
+
 export interface Store {
   upsertKnownBad(domain: string, fullHash: string, source: string, seenAt: Date): Promise<'inserted' | 'updated'>;
   hashesForPrefix(prefix: string): Promise<string[]>;
@@ -59,6 +79,17 @@ export interface Store {
   domainsMissingRdap(limit: number): Promise<string[]>;
 
   saveBloom(v: Omit<BloomVersion, 'createdAt'>): Promise<void>;
+
+  // v2: Certificate Transparency + crawling
+  getCtIndex(logUrl: string): Promise<number | null>;
+  setCtIndex(logUrl: string, next: number): Promise<void>;
+  upsertCtCandidate(c: Omit<CtCandidate, 'verdict'>): Promise<'inserted' | 'updated'>;
+  listCtCandidates(limit: number): Promise<CtCandidate[]>;
+  enqueueCrawl(domain: string): Promise<void>;
+  takeCrawlJobs(limit: number, maxAttempts: number): Promise<string[]>;
+  finishCrawl(result: CrawlResult): Promise<void>;
+  getCrawlResult(domain: string): Promise<CrawlResult | null>;
+  recordSighting(domain: string, source: string, at: Date): Promise<void>;
   latestBloom(): Promise<BloomVersion | null>;
 
   close(): Promise<void>;

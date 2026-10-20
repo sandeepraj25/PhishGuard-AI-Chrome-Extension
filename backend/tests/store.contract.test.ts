@@ -47,4 +47,46 @@ describe.each(storeFactories)('Store contract (%s)', (_name, make) => {
     await store.putRdap({ domain: 'a.test', registeredAt: at, status: 'ok', fetchedAt: at });
     expect((await store.getRdap('a.test'))?.registeredAt?.toISOString()).toBe(at.toISOString());
   });
+
+  it('v2: CT index, candidates (earliest first_seen), crawl queue with retries, sightings', async () => {
+    store = await make();
+    expect(await store.getCtIndex('log')).toBeNull();
+    await store.setCtIndex('log', 42);
+    expect(await store.getCtIndex('log')).toBe(42);
+    const c = { domain: 'c.test', certNames: ['c.test'], brand: 'examplebank', signal: 'host' as const, logUrl: 'log' };
+    expect(await store.upsertCtCandidate({ ...c, firstSeen: new Date('2026-10-02T00:00:00Z') })).toBe('inserted');
+    expect(
+      await store.upsertCtCandidate({ ...c, firstSeen: new Date('2026-10-01T00:00:00Z'), certNames: ['www.c.test'] }),
+    ).toBe('updated');
+    const [cand] = await store.listCtCandidates(5);
+    expect(cand.firstSeen.toISOString()).toBe('2026-10-01T00:00:00.000Z');
+    expect(cand.certNames.sort()).toEqual(['c.test', 'www.c.test']);
+    await store.enqueueCrawl('c.test');
+    await store.enqueueCrawl('c.test'); // idempotent
+    expect(await store.takeCrawlJobs(5, 3)).toEqual(['c.test']);
+    await store.finishCrawl({
+      domain: 'c.test',
+      fetchedAt: new Date(),
+      httpStatus: null,
+      finalUrl: null,
+      html: null,
+      screenshotPath: null,
+      error: 'timeout',
+    });
+    expect(await store.takeCrawlJobs(5, 3)).toEqual(['c.test']); // retried
+    await store.finishCrawl({
+      domain: 'c.test',
+      fetchedAt: new Date(),
+      httpStatus: 200,
+      finalUrl: 'https://c.test/',
+      html: '<p>x</p>',
+      screenshotPath: null,
+      error: null,
+    });
+    expect(await store.takeCrawlJobs(5, 3)).toEqual([]); // done
+    expect((await store.getCrawlResult('c.test'))?.html).toBe('<p>x</p>');
+    await store.recordSighting('c.test', 'ct', new Date('2026-10-03T00:00:00Z'));
+    await store.recordSighting('c.test', 'ct', new Date('2026-10-01T00:00:00Z'));
+    expect((await store.sightings('c.test'))[0].firstSeen.toISOString()).toBe('2026-10-01T00:00:00.000Z');
+  });
 });

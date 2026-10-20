@@ -1,7 +1,7 @@
 {
   "script": "ml/scripts/train_url.py",
-  "generated_at": "2026-10-20T04:10:10+00:00",
-  "git_commit": "unknown",
+  "generated_at": "2026-10-20T04:21:39+00:00",
+  "git_commit": "c5f2e3a-dirty",
   "dataset": "synthetic-sample",
   "data_file": "ml/data/processed/urls.csv",
   "data_sha256": "2e474436d5a91b2d",

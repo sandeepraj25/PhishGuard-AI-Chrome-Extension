@@ -1,6 +1,15 @@
 import pg from 'pg';
 
-import type { BloomVersion, KnownBadRow, RdapEntry, ReportInput, ReportRow, Store } from './store';
+import type {
+  BloomVersion,
+  CrawlResult,
+  CtCandidate,
+  KnownBadRow,
+  RdapEntry,
+  ReportInput,
+  ReportRow,
+  Store,
+} from './store';
 
 export class PgStore implements Store {
   constructor(readonly pool: pg.Pool) {}
@@ -151,6 +160,103 @@ export class PgStore implements Store {
     const r = await this.pool.query('SELECT * FROM bloom_versions ORDER BY id DESC LIMIT 1');
     const x = r.rows[0];
     return x ? { etag: x.etag, items: x.items, bytes: new Uint8Array(x.bytes), createdAt: x.created_at } : null;
+  }
+
+  async getCtIndex(logUrl: string) {
+    const r = await this.pool.query<{ next_index: string }>('SELECT next_index FROM ct_log_state WHERE log_url = $1', [
+      logUrl,
+    ]);
+    return r.rows[0] ? Number(r.rows[0].next_index) : null;
+  }
+
+  async setCtIndex(logUrl: string, next: number) {
+    await this.pool.query(
+      `INSERT INTO ct_log_state (log_url, next_index) VALUES ($1, $2)
+       ON CONFLICT (log_url) DO UPDATE SET next_index = $2, updated_at = now()`,
+      [logUrl, next],
+    );
+  }
+
+  async upsertCtCandidate(c: Omit<CtCandidate, 'verdict'>) {
+    const r = await this.pool.query<{ inserted: boolean }>(
+      `INSERT INTO ct_candidates (domain, first_seen, cert_names, brand, signal, log_url)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (domain) DO UPDATE SET
+         first_seen = LEAST(ct_candidates.first_seen, EXCLUDED.first_seen),
+         cert_names = (SELECT array_agg(DISTINCT n) FROM unnest(ct_candidates.cert_names || EXCLUDED.cert_names) n)
+       RETURNING (xmax = 0) AS inserted`,
+      [c.domain, c.firstSeen, c.certNames, c.brand, c.signal, c.logUrl],
+    );
+    return r.rows[0].inserted ? ('inserted' as const) : ('updated' as const);
+  }
+
+  async listCtCandidates(limit: number): Promise<CtCandidate[]> {
+    const r = await this.pool.query('SELECT * FROM ct_candidates ORDER BY first_seen DESC LIMIT $1', [limit]);
+    return r.rows.map((x) => ({
+      domain: x.domain,
+      firstSeen: x.first_seen,
+      certNames: x.cert_names,
+      brand: x.brand,
+      signal: x.signal,
+      logUrl: x.log_url,
+      verdict: x.verdict,
+    }));
+  }
+
+  async enqueueCrawl(domain: string) {
+    await this.pool.query('INSERT INTO crawl_queue (domain) VALUES ($1) ON CONFLICT DO NOTHING', [domain]);
+  }
+
+  async takeCrawlJobs(limit: number, maxAttempts: number) {
+    // SKIP LOCKED lets several crawler replicas take disjoint jobs without blocking each other.
+    const r = await this.pool.query<{ domain: string }>(
+      `UPDATE crawl_queue SET attempts = attempts + 1, updated_at = now()
+       WHERE domain IN (SELECT domain FROM crawl_queue WHERE status = 'pending' AND attempts < $2
+                        ORDER BY enqueued_at LIMIT $1 FOR UPDATE SKIP LOCKED)
+       RETURNING domain`,
+      [limit, maxAttempts],
+    );
+    return r.rows.map((x) => x.domain);
+  }
+
+  async finishCrawl(c: CrawlResult) {
+    await this.pool.query(
+      `INSERT INTO crawl_results (domain, fetched_at, http_status, final_url, html, screenshot_path, error)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (domain) DO UPDATE SET fetched_at = $2, http_status = $3, final_url = $4, html = $5,
+         screenshot_path = $6, error = $7`,
+      [c.domain, c.fetchedAt, c.httpStatus, c.finalUrl, c.html, c.screenshotPath, c.error],
+    );
+    await this.pool.query(
+      `UPDATE crawl_queue SET status = CASE WHEN $2::text IS NULL THEN 'done'
+                                            WHEN attempts >= 3 THEN 'failed' ELSE 'pending' END,
+                              updated_at = now() WHERE domain = $1`,
+      [c.domain, c.error],
+    );
+  }
+
+  async getCrawlResult(domain: string): Promise<CrawlResult | null> {
+    const r = await this.pool.query('SELECT * FROM crawl_results WHERE domain = $1', [domain]);
+    const x = r.rows[0];
+    return x
+      ? {
+          domain: x.domain,
+          fetchedAt: x.fetched_at,
+          httpStatus: x.http_status,
+          finalUrl: x.final_url,
+          html: x.html,
+          screenshotPath: x.screenshot_path,
+          error: x.error,
+        }
+      : null;
+  }
+
+  async recordSighting(domain: string, source: string, at: Date) {
+    await this.pool.query(
+      `INSERT INTO domain_sightings (domain, source, first_seen) VALUES ($1, $2, $3)
+       ON CONFLICT (domain, source) DO UPDATE SET first_seen = LEAST(domain_sightings.first_seen, EXCLUDED.first_seen)`,
+      [domain, source, at],
+    );
   }
 
   async close() {

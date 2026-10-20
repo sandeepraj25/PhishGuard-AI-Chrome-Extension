@@ -12,6 +12,10 @@ import { PgStore } from '../db/pgStore';
 import { domainExtractor, loadNeverBlock } from '../lib/domains';
 import { rebuildBloom } from './bloomBuilder';
 import { ingestFeed } from './feeds';
+import { readFileSync } from 'node:fs';
+
+import { brandSignalFromFeatures, pollLog, type CtLog } from './ct';
+import { crawlOnce, defaultHtmlFetcher, playwrightScreenshotter } from './crawler';
 import { withLock } from './lock';
 import { RdapClient, rdapEnrich } from './rdap';
 
@@ -46,6 +50,32 @@ async function rdapCycle(): Promise<void> {
   await withLock(redis, 'rdap', 55_000, async () => log(`rdap enriched ${await rdapEnrich(store, rdap)}`));
 }
 
+const ctLogs = (JSON.parse(readFileSync(resolve(BACKEND_ROOT, 'config/ct_logs.json'), 'utf8')) as { logs: CtLog[] })
+  .logs;
+const brandSignal = (domain: string) => {
+  const { features, details } = fx.extract(`https://${domain}/`);
+  return brandSignalFromFeatures(features, details);
+};
+const screenshotter = process.env.CRAWL_SCREENSHOT_DIR
+  ? await playwrightScreenshotter(process.env.CRAWL_SCREENSHOT_DIR)
+  : null;
+
+async function ctCycle(): Promise<void> {
+  await withLock(redis, 'ct-poll', 55_000, async () => {
+    for (const ctLog of ctLogs.filter((l) => l.enabled)) {
+      await pollLog(ctLog, { store, fetcher, registeredDomain: (u) => fx.registeredDomain(u), brandSignal, log });
+    }
+  });
+}
+
+async function crawlCycle(): Promise<void> {
+  await withLock(redis, 'crawl', 55_000, async () =>
+    log(`crawled ${(await crawlOnce(store, defaultHtmlFetcher, screenshotter)).length}`),
+  );
+}
+
 void feedCycle();
+setInterval(() => void ctCycle().catch((e) => log(`ct cycle failed: ${e}`)), 60_000);
+setInterval(() => void crawlCycle().catch((e) => log(`crawl cycle failed: ${e}`)), 30_000);
 setInterval(() => void feedCycle().catch((e) => log(`feed cycle failed: ${e}`)), 15 * 60_000);
 setInterval(() => void rdapCycle().catch((e) => log(`rdap cycle failed: ${e}`)), 60_000);

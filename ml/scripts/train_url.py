@@ -45,9 +45,13 @@ def main() -> None:
     ap.add_argument("--host-only", action="store_true", help="ignore path/query (use with Tranco legit data)")
     ap.add_argument("--out-dir", type=Path, default=MODELS)
     ap.add_argument("--no-install", action="store_true", help="do not copy into extension/public/models")
+    ap.add_argument("--extra", type=Path, action="append", default=[],
+                    help="extra labeled CSVs in the processed format (reviewed reports, regional dataset)")
     args = ap.parse_args()
 
     records = read_records(args.data)
+    for extra in args.extra:
+        records += read_records(extra)
     split = time_domain_split(records)
     assert_no_leakage(split)
     Xtr, ytr = featurize(split.train, args.host_only)

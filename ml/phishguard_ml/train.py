@@ -48,21 +48,22 @@ def featurize(records: list[UrlRecord], host_only: bool = False) -> tuple[np.nda
 
 
 def train_lgbm(Xtr: np.ndarray, ytr: np.ndarray, Xva: np.ndarray, yva: np.ndarray,
-               rounds: int = 600, params: dict | None = None) -> lgb.Booster:
+               rounds: int = 600, params: dict | None = None, feature_names: list[str] | None = None) -> lgb.Booster:
     p = dict(LGB_PARAMS, **(params or {}))
-    dtr = lgb.Dataset(Xtr, ytr, feature_name=FEATURE_NAMES, free_raw_data=False)
+    dtr = lgb.Dataset(Xtr, ytr, feature_name=feature_names or FEATURE_NAMES, free_raw_data=False)
     dva = lgb.Dataset(Xva, yva, reference=dtr)
     return lgb.train(p, dtr, num_boost_round=rounds, valid_sets=[dva],
                      callbacks=[lgb.early_stopping(50, verbose=False), lgb.log_evaluation(0)])
 
 
-def export_onnx(booster: lgb.Booster, path: Path) -> int:
+def export_onnx(booster: lgb.Booster, path: Path, feature_names: list[str] | None = None) -> int:
     """Convert to ONNX (ai.onnx.ml TreeEnsembleClassifier). Output 'probabilities' [N,2]."""
     import onnx
     import onnxmltools
     from onnxmltools.convert.common.data_types import FloatTensorType
 
-    model = onnxmltools.convert_lightgbm(booster, initial_types=[("input", FloatTensorType([None, len(FEATURE_NAMES)]))],
+    names = feature_names or FEATURE_NAMES
+    model = onnxmltools.convert_lightgbm(booster, initial_types=[("input", FloatTensorType([None, len(names)]))],
                                          zipmap=False, target_opset=15)
     # The converter fixes the batch dimension of the 'label' output to 1; make it symbolic so
     # ONNX Runtime does not warn (or fail, on stricter backends) for batches > 1.
@@ -71,13 +72,13 @@ def export_onnx(booster: lgb.Booster, path: Path) -> int:
         if dims:
             dims[0].ClearField("dim_value")
             dims[0].dim_param = "N"
-    model.doc_string = "PhishGuard URL model (LightGBM). Input: float32[N,26] per shared/feature_spec.json"
+    model.doc_string = f"PhishGuard LightGBM model. Input: float32[N,{len(names)}] in feature-spec order"
     path.parent.mkdir(parents=True, exist_ok=True)
     onnx.save(model, str(path))
     return path.stat().st_size
 
 
-def export_trees(booster: lgb.Booster, path: Path) -> int:
+def export_trees(booster: lgb.Booster, path: Path, feature_names: list[str] | None = None) -> int:
     """Flatten LightGBM trees into compact arrays for TreeSHAP in TypeScript.
 
     Per tree: f (split feature, -1 for leaf), t (threshold), l/r (children), v (leaf value),
@@ -111,7 +112,7 @@ def export_trees(booster: lgb.Booster, path: Path) -> int:
 
         walk(info["tree_structure"])
         trees.append({"f": f, "t": t, "l": l, "r": r, "v": v, "c": c})
-    doc = {"version": 1, "feature_names": FEATURE_NAMES, "objective": "binary", "trees": trees}
+    doc = {"version": 1, "feature_names": feature_names or FEATURE_NAMES, "objective": "binary", "trees": trees}
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
     return path.stat().st_size

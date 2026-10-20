@@ -1,4 +1,5 @@
 /** Shared types for messages between content script, popup, offscreen document and service worker. */
+import type { RawPageSignals } from './pagefeatures';
 import type { MatchDetails } from './wasm';
 
 export type Band = 'safe' | 'caution' | 'warning';
@@ -27,11 +28,8 @@ export interface Verdict {
   computedAt: number;
 }
 
-export interface PageSignals {
-  /** Page-level features from the content script (Layer 2, v2+). */
-  features: number[];
-  formActionDomain: string;
-}
+/** Raw DOM signals from the content script (Layer 2); finalised in the offscreen worker. */
+export type PageSignals = RawPageSignals;
 
 export type Message =
   | { type: 'getVerdict'; url: string; page?: PageSignals; sensitive?: boolean }

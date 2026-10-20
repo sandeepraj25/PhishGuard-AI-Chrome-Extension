@@ -17,8 +17,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Any
 
-from .data import UrlRecord
+# Any object with .registered_domain, .first_seen and .label works (URL records, page records).
+UrlRecord = Any
 
 
 @dataclass

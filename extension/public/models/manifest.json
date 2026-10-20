@@ -1,7 +1,12 @@
 {
   "url": {
-    "version": "url-2026-10-20-unknown",
+    "version": "url-2026-10-20-c5f2e3a-dirty",
     "features": 26,
+    "dataset": "synthetic-sample"
+  },
+  "page": {
+    "version": "page-2026-10-20-c5f2e3a-dirty",
+    "features": 23,
     "dataset": "synthetic-sample"
   }
 }

@@ -21,6 +21,8 @@ export const PAGES: Record<string, string> = {
   'http://account-verify-examplebank.test/login': 'examplebank_phish.html',
   'http://www.example-shop.test/checkout': 'shop_checkout.html',
   'http://news.example.test/article/123': 'plain_article.html',
+  'http://www.cedarlabs.test/members': 'members_form_mismatch.html',
+  'http://portal.cedarlabs.test/members/': 'members_ok.html',
 };
 
 if (!existsSync(resolve(EXT, 'manifest.json'))) {

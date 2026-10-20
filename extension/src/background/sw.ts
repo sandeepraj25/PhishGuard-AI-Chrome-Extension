@@ -13,8 +13,9 @@ import { sha256Hex } from '../lib/hash';
 import { configureOrt } from '../lib/model';
 import { domainAgeDays } from '../lib/rdap';
 import * as store from '../lib/storage';
-import type { Message, Verdict } from '../lib/types';
+import type { Message, PageSignals, Verdict } from '../lib/types';
 import { loadEngineAssets } from './assets';
+import { scorePage } from './offscreen';
 
 configureOrt({ wasmUrl: chrome.runtime.getURL('ort/ort-wasm-simd-threaded.wasm'), proxy: false });
 
@@ -30,7 +31,10 @@ function engine(): Promise<Engine> {
 
 const isWeb = (u?: string): u is string => !!u && /^https?:\/\//i.test(u);
 
-async function computeVerdict(url: string, opts: { sensitive?: boolean } = {}): Promise<Verdict> {
+/** Phase v3 gates Layers 2-3 behind Pro; until then (and in tests) they are always on. */
+const layer2Enabled = (_s: { plan: string }): boolean => true;
+
+async function computeVerdict(url: string, opts: { sensitive?: boolean; page?: PageSignals } = {}): Promise<Verdict> {
   const eng = await engine();
   const settings = await store.getSettings();
   const domain = eng.registeredDomain(url);
@@ -39,7 +43,18 @@ async function computeVerdict(url: string, opts: { sensitive?: boolean } = {}): 
   const seenBefore = await store.wasSeen(domainHash);
   // D6: domain age only when opted in, and only at the password moment (fewer lookups).
   const age = settings.rdapOptIn && opts.sensitive ? await domainAgeDays(domain) : -1;
-  const v = await eng.verdict(url, { trusted, seenBefore, apiBase: settings.apiBase, domainAgeDays: age });
+  // Layer 2 (page model) only at the password moment, in the offscreen document.
+  const page = opts.sensitive && opts.page && layer2Enabled(settings) ? await scorePage(opts.page) : null;
+  const v = await eng.verdict(url, {
+    trusted,
+    seenBefore,
+    apiBase: settings.apiBase,
+    domainAgeDays: age,
+    extraProb: page?.prob ?? null,
+    extraReasons: page?.reasons ?? [],
+    extraFloor: page?.floor ?? 0,
+    layers: page ? ['url', 'page'] : ['url'],
+  });
   if (v.band === 'safe' && v.knownBad === 'no') await store.markSeen(domainHash);
   return v;
 }
@@ -98,7 +113,7 @@ async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promi
   switch (msg.type) {
     case 'getVerdict': {
       if (!isWeb(msg.url)) return null;
-      const v = await computeVerdict(msg.url, { sensitive: msg.sensitive });
+      const v = await computeVerdict(msg.url, { sensitive: msg.sensitive, page: msg.page });
       if (sender.tab?.id !== undefined && sender.frameId === 0) {
         await store.setTabVerdict(sender.tab.id, v);
         await updateBadge(sender.tab.id, v);
@@ -150,7 +165,8 @@ async function handle(msg: Message, sender: chrome.runtime.MessageSender): Promi
   }
 }
 
-chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg: Message & { target?: string }, sender, sendResponse) => {
+  if (msg?.target === 'offscreen') return false; // addressed to the offscreen document
   handle(msg, sender).then(sendResponse, (e: unknown) => sendResponse({ error: String(e) }));
   return true; // keep the channel open for the async response
 });

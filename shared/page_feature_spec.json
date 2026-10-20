@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "notes": "Layer 2 page features. Single implementation: extension/src/lib/pagefeatures.ts (collectRaw runs on the live DOM in the content script and on jsdom in training; finalize runs in the offscreen document and in training).",
+  "page_features": [
+    {"name": "num_password_fields"},
+    {"name": "num_card_fields"},
+    {"name": "num_otp_fields"},
+    {"name": "num_forms"},
+    {"name": "num_inputs"},
+    {"name": "form_action_external",        "desc": "A form with a sensitive field submits to a different registered domain"},
+    {"name": "form_action_to_official",     "desc": "That external action domain is an official domain of a known brand (SSO-like)"},
+    {"name": "form_action_unusual_scheme",  "desc": "Sensitive form action uses mailto:, javascript:, data: or is an IP host"},
+    {"name": "form_get_with_password",      "desc": "Password form uses method=GET"},
+    {"name": "external_resource_ratio",     "desc": "Scripts/images/styles from other registered domains / all resources"},
+    {"name": "external_link_ratio",         "desc": "Links to other registered domains / all links"},
+    {"name": "null_link_ratio",             "desc": "Links that go nowhere (#, javascript:) / all links"},
+    {"name": "num_links"},
+    {"name": "brand_in_title_not_official", "desc": "Title or og:site_name names a brand whose official domains do not include this site"},
+    {"name": "brand_in_text_not_official",  "desc": "Visible text names such a brand"},
+    {"name": "num_brands_mentioned"},
+    {"name": "resources_from_brand_domain", "desc": "Page loads resources (e.g. logo) from the official domain of a brand it is not"},
+    {"name": "num_iframes"},
+    {"name": "hidden_iframes",              "desc": "Iframes with width/height <= 1 or hidden via attributes/inline style"},
+    {"name": "urgency_phrase_count",        "desc": "Multilingual urgency phrases found (en, hi, pt, id, es)"},
+    {"name": "context_menu_blocked",        "desc": "Right-click disabled via oncontextmenu"},
+    {"name": "autocomplete_off_password",   "desc": "Password field with autocomplete=off"},
+    {"name": "text_length",                 "desc": "Characters of visible text sampled (capped at 5000)"}
+  ]
+}

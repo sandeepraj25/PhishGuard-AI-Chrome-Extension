@@ -1,6 +1,6 @@
 # PhishGuard AI — Build Plan
 
-**Status:** v1 complete (see section 6).
+**Status:** v1 and v2 complete (see section 6).
 
 This file is the working plan. It is updated at the end of every phase.
 
@@ -77,13 +77,13 @@ phishguard-ai/
 - [x] Docs + commit "phase v1 complete"
 
 ### v2 — Smarter detection
-- [ ] DOM feature extractor (content script) incl. multilingual urgency phrases (en, hi, pt, id, es)
-- [ ] Page model (LightGBM → ONNX) in offscreen document, only on pages with sensitive fields
-- [ ] CT log worker (RFC 6962 get-entries polling) → brand-token flagging → crawl queue
-- [ ] Lead-time tracker + eval_leadtime.py
-- [ ] Regional labeling CLI + export with datasheet
-- [ ] Report-mistake → review queue → retraining export
-- [ ] e2e: form-action mismatch fixture; commit "phase v2 complete"
+- [x] DOM feature extractor (content script) incl. multilingual urgency phrases (en, hi, pt, id, es)
+- [x] Page model (LightGBM → ONNX) in offscreen document, only on pages with sensitive fields
+- [x] CT log worker (RFC 6962 get-entries polling) → brand-token flagging → crawl queue
+- [x] Lead-time tracker + eval_leadtime.py
+- [x] Regional labeling CLI + export with datasheet
+- [x] Report-mistake → review queue → retraining export
+- [x] e2e: form-action mismatch fixture; commit "phase v2 complete"
 
 ### v3 — Pro
 - [ ] Visual embedding model (MobileNetV3-small family), reference gallery, grey-zone only
@@ -154,3 +154,10 @@ phishguard-ai/
 - Extension: Layer 1 in the service worker (ORT Web works there with the wasm-bundle build, so D8 fallback was not needed), Password Moment Guard, popup, block page, Bloom + hash-prefix check.
 - Backend: `/v1/check`, `/v1/report`, `/v1/bloom`, rate limiting (Redis), feed-ingest + Bloom rebuild + RDAP workers; Postgres store contract tests.
 - Tests: pytest 25, vitest 17 (extension) + 27 (backend, incl. Postgres + Redis), Playwright e2e 10 (incl. full stack with a live backend).
+
+### v2 — complete
+- Layer 2 page model: 23 DOM features implemented once in TypeScript (content script + jsdom for training), LightGBM → ONNX, served from an offscreen document's dedicated worker; only at the password moment.
+- CT worker (RFC 6962 polling, own DER parser for pre-certificates), brand-signal filtering, crawl queue + crawler.
+- Lead-time tracker: `domain_sightings` + `/v1/admin/leadtime.csv` + `ml/scripts/eval_leadtime.py`.
+- Regional labeling CLI (append-only log, undo, multi-labeler majority, conflicts) + export with auto-generated datasheet.
+- Review queue: admin API (bearer token), export → `import_reviews.py` → `train_url.py --extra`.

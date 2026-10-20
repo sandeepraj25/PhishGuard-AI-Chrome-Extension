@@ -25,6 +25,13 @@ Grouped by urgency. Each item says where the code expects the result.
 - [ ] Regenerate `shared/confusables.json` from the official Unicode `confusables.txt`: `python ml/scripts/build_confusables.py --confusables confusables.txt`.
 - [ ] Update `shared/public_suffix_list.dat` from publicsuffix.org (snapshot is from 2025-04) and remove overrides that upstream now contains.
 
+## Phase v2 operations
+- [ ] Set `ADMIN_TOKEN` (long random) and review the report queue regularly (`/v1/admin/reports`).
+- [ ] Refresh `backend/config/ct_logs.json` from Chrome's log list every ~6 months (logs are temporal shards). Logs that only speak the newer static-ct-api need a tile client (not built).
+- [ ] Run the crawler in an **isolated** container/VM (no credentials, egress-only). Install Playwright there and set `CRAWL_SCREENSHOT_DIR` if you want screenshots (needed for Layer 3 gallery building).
+- [ ] Recruit regional labelers (Hindi/English for India; pt-BR; id; es) and decide the dataset licence (`ml/datasets/regional/README.md`).
+- [ ] Replace the synthetic page dataset with crawled + labeled pages and re-run `make pages`.
+
 ## Legal / policy
 - [ ] Re-check every feed licence in `docs/data_licenses.md`. **Blocking:** OpenPhish community feed is non-commercial; the default Tranco list includes CC BY-NC data; confirm PhishTank allows redistributing a derived Bloom filter.
 - [ ] Have the privacy policy draft (`docs/privacy_policy.md`) reviewed and host it at a public URL (the Web Store requires one).

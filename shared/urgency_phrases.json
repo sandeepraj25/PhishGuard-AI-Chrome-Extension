@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "notes": "Lower-case phrases that create false urgency, matched as substrings in page title + visible text. Each phrase counts once. Hand-written seed list — extend with regional labelers (see ml/datasets/regional/DATASHEET.md).",
+  "languages": {
+    "en": ["account will be suspended", "account has been suspended", "verify your account", "verify now", "within 24 hours",
+            "immediately", "unusual activity", "unauthorized access", "confirm your identity", "update your kyc",
+            "kyc update", "your account is locked", "limited access", "action required", "final notice",
+            "failed delivery", "reschedule delivery", "pay the customs fee", "your pan card", "refund is pending",
+            "claim your reward", "you have won", "last warning"],
+    "hi": ["खाता बंद", "तुरंत", "24 घंटे", "केवाईसी", "अपडेट करें", "सत्यापित करें", "आपका खाता", "ब्लॉक कर दिया जाएगा",
+            "अंतिम चेतावनी", "इनाम", "रिफंड", "khata band", "turant", "kyc update karein"],
+    "pt": ["sua conta será bloqueada", "conta bloqueada", "verifique sua conta", "atualize seus dados", "imediatamente",
+            "em 24 horas", "acesso não autorizado", "confirme sua identidade", "última chance", "pagamento pendente",
+            "encomenda retida", "taxa de entrega"],
+    "id": ["akun anda akan diblokir", "akun diblokir", "verifikasi akun", "segera", "dalam 24 jam", "perbarui data",
+            "aktivitas mencurigakan", "konfirmasi identitas", "hadiah", "paket tertahan", "rekening anda"],
+    "es": ["su cuenta será suspendida", "cuenta suspendida", "verifique su cuenta", "verifica tu cuenta", "inmediatamente",
+            "en 24 horas", "actividad inusual", "acceso no autorizado", "confirme su identidad", "último aviso",
+            "paquete retenido", "actualice sus datos"]
+  }
+}

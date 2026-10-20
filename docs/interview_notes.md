@@ -69,6 +69,19 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 
 ---
 
+### 3.7 DER parsing for CT pre-certificates
+- **What:** read tag–length–value triples; walk Certificate → TBSCertificate → extensions → subjectAltName → dNSName entries.
+- **Real-life example:** reading a parcel label where every field starts with "type, length" — you can skip fields you don't care about without understanding them.
+- **Time:** O(size of certificate) — every byte is visited at most once. **Space:** O(number of names).
+- **Safety:** every length is bounds-checked; indefinite lengths rejected; fuzzed with 500 random inputs.
+
+### 3.8 CT polling and resumability
+- State = next index per log in Postgres; logs may return fewer entries than asked, so we advance by the number actually returned. A crash re-reads at most one batch (idempotent upserts with `LEAST(first_seen)`).
+
+### 3.9 One implementation for page features
+- **Problem:** if training extracts page features in Python and the extension in TypeScript, they drift.
+- **Fix:** the feature code exists only in TypeScript; training runs it on jsdom. Same idea as the C++/WASM URL extractor, cheaper because jsdom exists.
+
 ## 4. Mistakes found and fixed (good interview stories)
 
 1. **Label leakage from data sources.** Tranco gives bare domains (`https://site.com/`), phishing feeds give full URLs with paths. A model would learn "has a path ⇒ phishing". Fix: `--host-only` mode for training/eval when legit data has no paths, a warning in `clean_dedupe.py`, and a recommendation to add a legit source with real paths.
@@ -79,7 +92,10 @@ All numbers quoted here (Bloom size, tree count, test-set sizes) come from `ml/r
 6. **ONNX export:** the converter fixed the batch dimension of the `label` output to 1 → runtime warnings for batches. Fixed by making it symbolic after conversion.
 7. **14 MB duplicated in the package:** Vite also emitted a hashed copy of the ONNX Runtime wasm it saw via `new URL(..., import.meta.url)`; we point ORT at `/ort/` explicitly, so the build removes the dead copy.
 8. **Flaky e2e:** evaluating in the service worker immediately after start-up — `chrome.storage` was not bound yet. Fixed by waiting for the APIs in the fixture.
-9. **Synthetic data is too easy.** PR-AUC 1.000 on the synthetic sample only shows the model learned the generator's templates. The README says so in a warning box generated from the result JSON's `dataset` field.
+9. **The most important reason was hidden.** On the form-action fixture, SHAP ranked "links lead nowhere" above "your password is sent to attacker-example.test". Users act on concrete facts, so verifiable "hard evidence" reasons are now pinned first, and reasons from all layers are merged by weight (before: page reasons always came before URL reasons).
+10. **ONNX Runtime proxy worker** would have re-executed our offscreen page script inside a worker (no `chrome.*` there). Fixed by owning the worker.
+11. **Undo in the labeling CLI** only worked when there was a *next* URL to show; an undo on the last item was silently ignored. Rewrote the loop around an index so undo always returns to the previous item.
+12. **Synthetic data is too easy.** PR-AUC 1.000 on the synthetic sample only shows the model learned the generator's templates. The README says so in a warning box generated from the result JSON's `dataset` field.
 
 ---
 
