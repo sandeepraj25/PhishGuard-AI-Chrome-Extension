@@ -14,4 +14,6 @@ extension/public/data/psl_ascii.txt
 extension/public/ort/
 extension/test-results/
 extension/playwright-report/
+extension/release/
 test-results/
+release

@@ -4,7 +4,7 @@
  *     extension an org key + server URL via chrome.storage.managed — the real managed-install path.
  *  2. A warning on the phishing fixture becomes a Teams event (no URL, no domain) on the backend.
  *  3. The admin dashboard, served by the backend, shows the seeded demo data.
- * Skipped when the policy directory is not writable (needs root on Linux CI).
+ * Skipped on Windows/macOS and when the policy directory is not writable (needs root on Linux).
  */
 import { createHash } from 'node:crypto';
 import { accessSync, constants, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -34,6 +34,8 @@ const unpackedId = (path: string) =>
     .join('');
 
 function policyWritable(): boolean {
+  // Chromium reads this directory only on Linux (Windows/macOS use the registry / profiles).
+  if (process.platform !== 'linux') return false;
   try {
     mkdirSync(POLICY_DIR, { recursive: true });
     accessSync(POLICY_DIR, constants.W_OK);

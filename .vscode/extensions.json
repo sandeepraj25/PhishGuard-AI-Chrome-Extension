@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-playwright.playwright",
+    "vitest.explorer",
+    "ms-python.python",
+    "ms-vscode.cpptools",
+    "ms-vscode.cmake-tools",
+    "bierner.markdown-mermaid"
+  ]
+}

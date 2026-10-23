@@ -1,0 +1,12 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[python]": { "editor.defaultFormatter": "ms-python.python" },
+  "eslint.workingDirectories": ["extension", "backend"],
+  "playwright.env": {},
+  "vitest.rootConfig": "extension/vitest.config.ts",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["ml/tests"],
+  "cmake.sourceDirectory": "${workspaceFolder}/wasm",
+  "files.exclude": { "**/node_modules": true, "**/__pycache__": true }
+}

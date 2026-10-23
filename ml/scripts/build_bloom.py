@@ -13,7 +13,7 @@ from pathlib import Path
 import _common  # noqa: F401
 from phishguard_ml.bloom import BloomFilter
 from phishguard_ml.data import PROCESSED, read_records
-from phishguard_ml.paths import EXTENSION_PUBLIC, RESULTS
+from phishguard_ml.paths import EXTENSION_PUBLIC, RESULTS, SHARED
 
 SHARED_HOSTING = {"web.app", "firebaseapp.com", "github.io", "blogspot.com"}  # never block a whole platform
 
@@ -29,6 +29,13 @@ def main() -> None:
     if args.extra:
         domains |= {d.strip().lower() for d in args.extra.read_text().splitlines() if d.strip()}
     domains -= SHARED_HOSTING
+    # Never list a protected brand's own official domain, whatever a feed or dataset says.
+    official = {d for b in json.loads((SHARED / "brands.json").read_text(encoding="utf-8"))["brands"]
+                for d in b["official_domains"]}
+    removed = sorted(domains & official)
+    if removed:
+        print(f"WARNING: removed official brand domains from the known-bad list: {removed}")
+    domains -= official
     bf = BloomFilter.for_capacity(len(domains), args.fp_rate)
     for d in sorted(domains):
         bf.add(d)

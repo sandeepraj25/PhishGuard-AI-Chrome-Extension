@@ -23,11 +23,15 @@ export function domainExtractor(wasmPath: string, sharedDir: string): Promise<Fe
   return instance;
 }
 
-export function loadNeverBlock(path: string): Set<string> {
-  return new Set(
+/** never_block.txt plus every official brand domain from shared/brands.json. */
+export function loadNeverBlock(path: string, brandsPath = resolve(path, '../../../shared/brands.json')): Set<string> {
+  const set = new Set(
     readFileSync(path, 'utf8')
       .split('\n')
       .map((l) => l.trim().toLowerCase())
       .filter((l) => l && !l.startsWith('#')),
   );
+  const brands = JSON.parse(readFileSync(brandsPath, 'utf8')) as { brands: { official_domains: string[] }[] };
+  for (const b of brands.brands) for (const d of b.official_domains) set.add(d.toLowerCase());
+  return set;
 }

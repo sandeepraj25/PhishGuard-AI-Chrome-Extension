@@ -1,109 +1,109 @@
 {
   "script": "ml/scripts/eval_url.py",
-  "generated_at": "2026-10-20T04:21:44+00:00",
-  "git_commit": "c5f2e3a-dirty",
+  "generated_at": "2026-10-23T19:33:12+00:00",
+  "git_commit": "08ba433-dirty",
   "dataset": "synthetic-sample",
   "data_file": "ml/data/processed/urls.csv",
-  "data_sha256": "2e474436d5a91b2d",
+  "data_sha256": "9e033f19dc29ab63",
   "warning": "Synthetic sample data: these numbers measure the pipeline, not real-world accuracy.",
   "host_only": false,
   "test_split": {
-    "rows": 6323,
-    "phishing": 3252,
-    "domains": 2141,
-    "first_seen_min": "2026-05-16",
+    "rows": 6327,
+    "phishing": 3271,
+    "domains": 2142,
+    "first_seen_min": "2026-05-17",
     "first_seen_max": "2026-09-30"
   },
   "rules_baseline": {
-    "pr_auc": 0.9713134376901698,
+    "pr_auc": 0.9702672900033212,
     "recall_at_0.1pct_fpr": {
       "fpr_target": 0.001,
       "threshold": 50.0,
       "allowed_false_positives": 3,
-      "negatives": 3071,
+      "negatives": 3056,
       "actual_fpr": 0.0,
-      "recall": 0.6958794587945879
+      "recall": 0.6890859064506267
     },
     "recall_at_1pct_fpr": {
       "fpr_target": 0.01,
       "threshold": 45.0,
       "allowed_false_positives": 30,
-      "negatives": 3071,
-      "actual_fpr": 0.0019537609899055682,
-      "recall": 0.7604551045510455
+      "negatives": 3056,
+      "actual_fpr": 0.001963350785340314,
+      "recall": 0.7548150412717823
     },
     "at_threshold": {
       "30.0": {
-        "precision": 0.8783610755441741,
-        "recall": 0.8437884378843789,
-        "fpr": 0.12373819602735266
+        "precision": 0.8781660788714332,
+        "recall": 0.8373586059309079,
+        "fpr": 0.1243455497382199
       },
       "60.0": {
         "precision": 1.0,
-        "recall": 0.5064575645756457,
+        "recall": 0.5007642922653622,
         "fpr": 0.0
       }
     }
   },
   "model_onnx": {
-    "pr_auc": 0.9999700599404033,
+    "pr_auc": 0.999964234573444,
     "recall_at_0.1pct_fpr": {
       "fpr_target": 0.001,
-      "threshold": 45.38105010986328,
+      "threshold": 33.38726806640625,
       "allowed_false_positives": 3,
-      "negatives": 3071,
-      "actual_fpr": 0.0009768804949527841,
-      "recall": 0.9947724477244773
+      "negatives": 3056,
+      "actual_fpr": 0.000981675392670157,
+      "recall": 0.9960256802201162
     },
     "recall_at_1pct_fpr": {
       "fpr_target": 0.01,
-      "threshold": 1.6539275646209717,
+      "threshold": 1.980292797088623,
       "allowed_false_positives": 30,
-      "negatives": 3071,
-      "actual_fpr": 0.00976880494952784,
-      "recall": 0.9990774907749077
+      "negatives": 3056,
+      "actual_fpr": 0.00981675392670157,
+      "recall": 0.9987771323754203
     },
     "at_threshold": {
       "30.0": {
-        "precision": 0.9987665741597287,
-        "recall": 0.9960024600246002,
-        "fpr": 0.0013025073266037122
+        "precision": 0.9987741342323015,
+        "recall": 0.9963313971262611,
+        "fpr": 0.0013089005235602095
       },
       "60.0": {
-        "precision": 0.9996908809891808,
-        "recall": 0.9944649446494465,
-        "fpr": 0.00032562683165092806
+        "precision": 0.9996925914540424,
+        "recall": 0.9941913787832467,
+        "fpr": 0.0003272251308900524
       }
     }
   },
   "combined_shipped": {
-    "pr_auc": 0.9999701550248421,
+    "pr_auc": 0.999964234573444,
     "recall_at_0.1pct_fpr": {
       "fpr_target": 0.001,
-      "threshold": 45.38105130195618,
+      "threshold": 33.38726758956909,
       "allowed_false_positives": 3,
-      "negatives": 3071,
-      "actual_fpr": 0.0009768804949527841,
-      "recall": 0.9947724477244773
+      "negatives": 3056,
+      "actual_fpr": 0.000981675392670157,
+      "recall": 0.9960256802201162
     },
     "recall_at_1pct_fpr": {
       "fpr_target": 0.01,
-      "threshold": 1.6539275646209717,
+      "threshold": 1.980292797088623,
       "allowed_false_positives": 30,
-      "negatives": 3071,
-      "actual_fpr": 0.00976880494952784,
-      "recall": 0.9990774907749077
+      "negatives": 3056,
+      "actual_fpr": 0.00981675392670157,
+      "recall": 0.9987771323754203
     },
     "at_threshold": {
       "30.0": {
-        "precision": 0.9987665741597287,
-        "recall": 0.9960024600246002,
-        "fpr": 0.0013025073266037122
+        "precision": 0.9987741342323015,
+        "recall": 0.9963313971262611,
+        "fpr": 0.0013089005235602095
       },
       "60.0": {
-        "precision": 0.9996908809891808,
-        "recall": 0.9944649446494465,
-        "fpr": 0.00032562683165092806
+        "precision": 0.9996926859250154,
+        "recall": 0.9944970956893916,
+        "fpr": 0.0003272251308900524
       }
     }
   }

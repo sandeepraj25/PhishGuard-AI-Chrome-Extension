@@ -1,0 +1,70 @@
+{
+  "script": "ml/scripts/check_real_sites.py",
+  "generated_at": "2026-10-23T19:33:17+00:00",
+  "git_commit": "08ba433-dirty",
+  "dataset": "real (hand-picked legit URLs)",
+  "data_file": "shared/real_legit_sample.txt",
+  "data_sha256": "c9315357616603b0",
+  "urls": 102,
+  "warned": 9,
+  "false_warning_rate": 0.08823529411764706,
+  "max_rate": 0.01,
+  "passes_gate": false,
+  "warned_urls": [
+    {
+      "url": "https://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster",
+      "domain": "stackoverflow.com",
+      "score": 99.8,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://github.com/microsoft/vscode/pulls",
+      "domain": "github.com",
+      "score": 99.6,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=4765445b&response_type=code",
+      "domain": "microsoftonline.com",
+      "score": 99.3,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://infinity.icicibank.com/corp/AuthenticationController",
+      "domain": "icicibank.com",
+      "score": 98.1,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://www.dhl.com/in-en/home/tracking.html",
+      "domain": "dhl.com",
+      "score": 88.5,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://www.cred.club/",
+      "domain": "cred.club",
+      "score": 88.2,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://x.com/i/flow/login",
+      "domain": "x.com",
+      "score": 59.3,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://www.jio.com/selfcare/login/",
+      "domain": "jio.com",
+      "score": 46.2,
+      "bloom_hit": false
+    },
+    {
+      "url": "https://accounts.google.com/signin/v2/identifier",
+      "domain": "google.com",
+      "score": 43.2,
+      "bloom_hit": false
+    }
+  ],
+  "summary_line": "9 of 102 hand-picked real legitimate URLs would show a warning (8.8%; launch gate is \u2264 1%) \u2014 FAIL: do not publish this model."
+}

@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "1. Install everything", "type": "shell",
+      "command": "npm --prefix extension install && npm --prefix backend install && npm --prefix dashboard install && npx --prefix extension playwright install chromium",
+      "problemMatcher": [] },
+    { "label": "2. Build extension", "type": "shell", "command": "npm run build", "options": { "cwd": "${workspaceFolder}/extension" },
+      "group": { "kind": "build", "isDefault": true }, "problemMatcher": ["$tsc"] },
+    { "label": "3. Open test lab (manual testing)", "type": "shell", "command": "npm run build && npm --prefix ../dashboard run build && npm run demo",
+      "options": { "cwd": "${workspaceFolder}/extension" }, "problemMatcher": [] },
+    { "label": "4. Quick self-check (no window)", "type": "shell", "command": "npm run build && npm run demo -- --check",
+      "options": { "cwd": "${workspaceFolder}/extension" }, "problemMatcher": [] },
+    { "label": "5. Unit tests (extension)", "type": "shell", "command": "npx vitest run", "options": { "cwd": "${workspaceFolder}/extension" },
+      "group": "test", "problemMatcher": [] },
+    { "label": "6. End-to-end tests (browser)", "type": "shell", "command": "npm run build && npx playwright test",
+      "options": { "cwd": "${workspaceFolder}/extension" }, "group": "test", "problemMatcher": [] },
+    { "label": "7. Backend tests (in-memory)", "type": "shell", "command": "npx vitest run", "options": { "cwd": "${workspaceFolder}/backend" },
+      "group": "test", "problemMatcher": [] },
+    { "label": "8. Real-website check (launch gate)", "type": "shell", "command": "python ml/scripts/check_real_sites.py", "problemMatcher": [] },
+    { "label": "9. Package for Chrome Web Store", "type": "shell", "command": "npm run package",
+      "options": { "cwd": "${workspaceFolder}/extension", "env": { "VITE_API_BASE": "${input:apiBase}" } }, "problemMatcher": [] }
+  ],
+  "inputs": [
+    { "id": "apiBase", "type": "promptString", "description": "Public https URL of your PhishGuard server (empty = offline-only build)", "default": "" }
+  ]
+}

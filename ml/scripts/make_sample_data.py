@@ -122,7 +122,9 @@ class Gen:
     def homoglyph(self, token: str) -> str:
         chars = [i for i, c in enumerate(token) if c in CYRILLIC]
         if not chars:
-            return token
+            # No letter has a look-alike (e.g. "dhl"): returning the token unchanged would create
+            # the brand's REAL domain as a "phishing" example. Use a typo instead.
+            return self.typo(token)
         i = self.r.choice(chars)
         label = token[:i] + CYRILLIC[token[i]] + token[i + 1:]
         return "xn--" + label.encode("punycode").decode("ascii")
@@ -225,6 +227,10 @@ def main() -> None:
         r.registered_domain = eng.registered_domain(r.url)
         uniq.setdefault(r.url, r)
     # Same rule as clean_dedupe.py: a domain with phishing URLs has no legit rows.
+    # Safety net: a brand's official domain must never be labelled phishing.
+    official = {d for b in json.loads((SHARED / "brands.json").read_text(encoding="utf-8"))["brands"]
+                for d in b["official_domains"]}
+    uniq = {u: r for u, r in uniq.items() if not (r.label == 1 and r.registered_domain in official)}
     phish_domains = {r.registered_domain for r in uniq.values() if r.label == 1}
     final = [r for r in uniq.values() if r.label == 1 or r.registered_domain not in phish_domains]
     final.sort(key=lambda r: (r.first_seen, r.url))

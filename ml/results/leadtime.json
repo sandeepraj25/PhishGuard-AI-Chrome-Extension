@@ -1,7 +1,7 @@
 {
   "script": "ml/scripts/eval_leadtime.py",
-  "generated_at": "2026-10-20T09:14:55+00:00",
-  "git_commit": "e52c63d-dirty",
+  "generated_at": "2026-10-23T19:38:21+00:00",
+  "git_commit": "08ba433-dirty",
   "dataset": "synthetic-sample",
   "data_file": "ml/data/leadtime/leadtime_sample.csv",
   "data_sha256": "93430b83e8aa7a6f",

@@ -68,6 +68,7 @@ def main() -> None:
         "page_eval.json": "Layer 2 page model", "leadtime.json": "Lead time vs public feeds",
         "visual_eval.json": "Layer 3 visual model", "robustness.json": "Robustness (scripted attacks)",
         "drift.json": "Score drift",
+        "real_sites.json": "Real-website false warnings (launch gate)",
     }
     for f, label in extra.items():
         d = load(f)
