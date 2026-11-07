@@ -1,5 +1,11 @@
 # PhishGuard AI
 
+[![CI](https://github.com/sandeepraj25/PhishGuard-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/sandeepraj25/PhishGuard-AI/actions/workflows/ci.yml)
+![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
+![C++17 → WASM](https://img.shields.io/badge/C%2B%2B17-WebAssembly-654FF0)
+![ML](https://img.shields.io/badge/ML-LightGBM%20%7C%20PyTorch%20%7C%20ONNX-orange)
+
 **Warns you at the exact moment you type a password or card number on a phishing site, explains why in plain language, and aims to catch brand-new phishing domains before public blocklists do.**
 
 ![Demo GIF placeholder — record with `npx playwright test --headed` and a screen recorder](docs/demo-placeholder.png)
@@ -11,6 +17,23 @@ Blocklists are slow: a phishing domain usually lives for hours, and many are dea
 - *Contains "examplebank" but is not examplebank.test*
 - *Uses look-alike characters to imitate ExampleBank (examplebank.test)*
 - *Domain registered 3 days ago*
+
+## Features
+
+| Feature | What it does |
+|---|---|
+| **Password Moment Guard** | Silent while you browse. When you click into a password, card or OTP field on a risky page, an overlay explains the danger before you type. |
+| **Plain-language reasons** | Every warning shows the top 3 reasons, e.g. *"Form sends your password to a different site (attacker.test)"*. Reasons come from the model's own SHAP values and are only shown if literally true. |
+| **Layer 1 — URL model** | 26 URL features (look-alike brand names, Unicode tricks, punycode, typos, risky endings, suspicious words…) scored by a LightGBM model, on your device. |
+| **Layer 2 — page model** (Pro) | Reads the login form: does it send your password to another site? Does the title claim to be a bank it isn't? Urgency phrases in English, Hindi, Portuguese, Indonesian and Spanish. |
+| **Layer 3 — visual model** (Pro) | A small neural network (MobileNetV3-small) compares the login area with the real brand's sign-in page — catches copies whose logo is only an image. Runs only when Layers 1–2 are unsure. |
+| **Known-phishing block page** | A local Bloom filter of known phishing domains; a hit is confirmed with a privacy-safe 4-byte hash lookup, then the page is blocked. |
+| **Regional brands** | Global brands plus Indian banks (incl. new `*.bank.in`), UPI apps, couriers and government portals. |
+| **Trust / report** | "I trust this site", "Report mistake" (sends only the site name), trusted-sites list in the popup. |
+| **New-domain discovery** (server) | Watches Certificate Transparency logs for brand-new look-alike domains, often before public blocklists. |
+| **Pro plan** | Paddle subscriptions, signed licence keys, region-based pricing tiers. |
+| **Teams** | Org accounts with seats, managed install via Chrome Enterprise policy, admin dashboard of warning events (no browsing history). |
+| **Threat-feed API** | Partners can pull newly detected domains with an API key. |
 
 ## Architecture
 
@@ -38,6 +61,98 @@ flowchart LR
 ```
 
 More detail: [architecture](docs/architecture.md), [privacy](docs/privacy.md), [permissions](docs/permissions.md), [enterprise install](docs/enterprise.md), [interview notes](docs/interview_notes.md).
+
+## Tech stack
+
+### Chrome extension
+| Technology | Used for |
+|---|---|
+| **TypeScript 5.9** (strict) | All extension code |
+| **Chrome Manifest V3** | Service worker, content script, popup, offscreen document, block page |
+| **Chrome APIs** | `storage` (local / session / managed), `alarms`, `offscreen`, `tabs.captureVisibleTab`, runtime messaging |
+| **Vite 6** | Bundling (the content script is built separately as a classic script) |
+| **ONNX Runtime Web 1.30** | Runs all three ML models in the browser (WebAssembly backend) |
+| **WebAssembly (WASI)** | Runs the C++ feature extractor in the browser and on the server |
+| **Shadow DOM** | Warning overlay that a phishing page's CSS cannot hide or restyle |
+| **Web Workers, OffscreenCanvas** | Heavy models run off the main thread; screenshot decoding |
+| **Web Crypto (SHA-256)** | 4-byte hash prefix for the private known-bad lookup |
+
+### C++ feature extractor
+| Technology | Used for |
+|---|---|
+| **C++17** | URL parsing, Public Suffix List, homoglyph "skeleton" mapping, punycode (RFC 3492), banded edit distance, Bloom filter, a small JSON reader |
+| **Emscripten** / **Zig (`zig c++`)** | Compile to WebAssembly (same exported C functions either way) |
+| **CMake** | Native build |
+| **GoogleTest** | C++ unit tests |
+
+### Machine learning (Python)
+| Technology | Used for |
+|---|---|
+| **LightGBM 4.7** | URL model (Layer 1) and page model (Layer 2) |
+| **PyTorch 2 + torchvision** | Visual model (Layer 3, MobileNetV3-small backbone) |
+| **ONNX, onnxmltools, skl2onnx** | Export models for the browser |
+| **ONNX Runtime 1.29** | Evaluation, int8 quantisation of the visual model |
+| **scikit-learn, NumPy, pandas** | Metrics (PR-AUC, recall at 0.1 % FPR), data handling |
+| **TreeSHAP** (own TypeScript implementation) | The per-warning reasons; checked against LightGBM's SHAP output |
+| **jsdom, Playwright, Pillow, pngjs** | Page features and screenshots for training data |
+| **pytest, mypy** | Tests and type checks |
+
+### Backend and dashboard
+| Technology | Used for |
+|---|---|
+| **Node.js + TypeScript, Fastify 5** | REST API: `/v1/check`, `/v1/report`, `/v1/bloom`, licences, Teams, threat feed |
+| **PostgreSQL 16** (`pg`) | Known-bad domains, reports, CT candidates, licences, Teams events |
+| **Redis 7** (`ioredis`) | Shared rate limits, worker locks |
+| **Zod 4** | Validation of every request (e.g. rejects full URLs in reports) |
+| **Certificate Transparency (RFC 6962), RDAP** | New-domain discovery, domain age |
+| **Paddle Billing, HMAC-SHA256** | Pro subscriptions and signed licence keys |
+| **Vite + TypeScript** (no framework) | Teams admin dashboard |
+| **Docker, Docker Compose** | Running Postgres, Redis, API and workers together |
+
+### Testing and quality
+| Technology | Used for |
+|---|---|
+| **Playwright 1.56** | End-to-end tests with the real extension loaded in Chromium; manual test lab |
+| **Vitest 3** | Unit tests (extension and backend) |
+| **ESLint 9, typescript-eslint, Prettier 3** | Linting and formatting |
+| **GitHub Actions** | CI on every push; manual weekly-retrain workflow with a promotion gate |
+
+### Data sources
+**Tranco** (popular legitimate sites), **PhishTank** and **OpenPhish** (phishing URLs), **Public Suffix List**, **Unicode confusables**. Licence notes: [docs/data_licenses.md](docs/data_licenses.md).
+
+## How it was built
+
+The project was built in four phases, each ending with all tests passing and a commit named `phase vN complete`.
+
+| Phase | What was added |
+|---|---|
+| **v1 — MVP** | C++ URL feature extractor → WASM, LightGBM URL model → ONNX, Password Moment Guard, popup, block page, Bloom filter + hash-prefix check, backend with feed and RDAP workers |
+| **v2 — Smarter detection** | Page model in an offscreen document, Certificate Transparency worker + crawler, lead-time tracker, regional labeling tool, review queue for reports |
+| **v3 — Pro** | Visual look-alike model, robustness evaluation, Paddle licensing and feature gating, weekly retraining with a promotion gate |
+| **v4 — Scale** | Teams accounts and dashboard, managed install via Chrome policy, threat-feed API, error counters and drift report |
+
+### How a page is checked (step by step)
+
+1. **You open a page.** The service worker reduces the URL to its registered domain (using the Public Suffix List) and scores it silently. Only the toolbar badge changes.
+2. **Known-bad check.** The domain is looked up in a local Bloom filter. Only on a hit is the first 4 bytes of its SHA-256 hash sent to the server, which returns every full hash with that prefix; the comparison happens on your device.
+3. **You click a password / card / OTP field.** The content script asks for a full verdict:
+   - **Layer 1:** the C++/WASM extractor computes 26 features; ONNX Runtime runs the LightGBM model.
+   - **Layer 2 (Pro):** the page's forms, links and text are summarised and scored by the page model in the offscreen document.
+   - **Layer 3 (Pro, only if the score is between 20 and 70):** a screenshot of the login area is compared with the brand gallery by the visual model, then discarded.
+4. **Score 0–100** = max of the model probabilities and hard rules, then adjusted: known-bad → 100 (block page); trusted site → capped low; visited before without a warning → lowered.
+5. **Above 30** the overlay appears with the top 3 reasons (TreeSHAP values mapped to plain-language templates).
+
+### Key engineering ideas
+- **One feature extractor everywhere.** URL features are written once in C++, compiled to WebAssembly for the browser and the server, and mirrored in Python for training. A parity test compares the exact bits of all 26 features on 1,000 URLs across Python, native C++ and WASM (0 mismatches). Page features and image preprocessing likewise have a single TypeScript implementation used for both training and the extension.
+- **Deterministic maths.** `log2` is implemented from `frexp` and basic arithmetic, and C++ is compiled with `-ffp-contract=off`, so floating-point results are identical on every platform.
+- **Honest evaluation.** Data is split by registered domain *and* by time (train on older, test on newer), so the same phishing campaign can never appear in both. Metrics include recall at 0.1 % false-positive rate, compared with a rules-only baseline.
+- **Privacy by design.** All scoring runs on the device; the server only ever sees a 4-byte hash prefix for known-bad lookups. See [docs/privacy.md](docs/privacy.md).
+- **MV3-safe.** The service worker can stop at any time, so all state lives in `chrome.storage`; heavy models run in an offscreen document's worker; no remote code.
+
+Algorithms, complexity and the mistakes found along the way: [docs/interview_notes.md](docs/interview_notes.md).
+
+### Development tools
+VS Code (tasks and recommended extensions in `.vscode/`), Git and GitHub, Node.js 22, Python 3, CMake, Zig / Emscripten, Docker, Playwright's Chromium, and **Claude Code** (an AI coding assistant) for pair-programming.
 
 ## Results
 
@@ -120,6 +235,8 @@ cp .env.example .env && docker compose up --build      # API on :8787, workers, 
 VITE_API_BASE=http://localhost:8787 make ext
 ```
 
-## Status
+## Status and limitations
 
-See [PLAN.md](PLAN.md) for the phase checklist and [docs/HUMAN_TODO.md](docs/HUMAN_TODO.md) for everything that needs your accounts, keys or decisions.
+- **Not ready for the Chrome Web Store yet.** The models are trained on **synthetic** data. On 102 real legitimate websites the current URL model would warn on 9 (8.8 %), above the 1 % launch gate. Retrain on real data first ([docs/RUNNING.md](docs/RUNNING.md), Part 5). `npm run package` refuses to build a store upload until the gate passes.
+- The visual model is trained from scratch on fictional brands; it needs pretrained weights and a real gallery of official login pages.
+- Accounts, keys and legal checks that only the owner can do are listed in [docs/HUMAN_TODO.md](docs/HUMAN_TODO.md); the phase checklist and design decisions are in [PLAN.md](PLAN.md).
