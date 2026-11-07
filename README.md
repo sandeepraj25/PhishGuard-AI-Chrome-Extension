@@ -1,4 +1,4 @@
-# PhishGuard AI
+# PhishGuard AI — Chrome Extension
 
 [![CI](https://github.com/sandeepraj25/PhishGuard-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/sandeepraj25/PhishGuard-AI/actions/workflows/ci.yml)
 ![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
