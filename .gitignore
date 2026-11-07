@@ -21,3 +21,4 @@ release
 ml/data/
 ml/models/*.pt
 ml/models/candidates/
+docs/screenshots/frames/

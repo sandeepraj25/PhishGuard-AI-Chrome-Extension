@@ -6,9 +6,27 @@
 ![C++17 → WASM](https://img.shields.io/badge/C%2B%2B17-WebAssembly-654FF0)
 ![ML](https://img.shields.io/badge/ML-LightGBM%20%7C%20PyTorch%20%7C%20ONNX-orange)
 
-**Warns you at the exact moment you type a password or card number on a phishing site, explains why in plain language, and aims to catch brand-new phishing domains before public blocklists do.**
+> 🛡️ **A Chrome extension (Manifest V3)** that warns you at the exact moment you type a password or card number on a phishing site, explains why in plain language, and aims to catch brand-new phishing domains before public blocklists do. All checks run inside your browser.
 
-![Demo GIF placeholder — record with `npx playwright test --headed` and a screen recorder](docs/demo-placeholder.png)
+![PhishGuard AI Chrome extension showing a phishing warning on a look-alike bank login page](docs/screenshots/hero.png)
+
+### Install in Chrome (developer mode)
+
+```bash
+git clone https://github.com/sandeepraj25/PhishGuard-AI.git
+cd PhishGuard-AI/extension && npm install && npm run build
+```
+Then open `chrome://extensions` → turn on **Developer mode** → **Load unpacked** → choose `extension/dist`.
+Try every feature safely with the built-in test lab: `npm run demo` ([docs/RUNNING.md](docs/RUNNING.md)).
+
+### Screenshots
+
+| Typing on a fake login page | Extension popup | Known phishing site | Real site |
+|---|---|---|---|
+| ![Demo: the warning appears when the password box is clicked](docs/screenshots/demo.gif) | ![Popup with risk score and reasons](docs/screenshots/popup.png) | ![Red block page for a known phishing site](docs/screenshots/block.png) | ![No warning on the real ExampleBank login](docs/screenshots/legit.png) |
+| Silent until you click the password box, then explains why | Score, reasons, trust / report, plan | Blocked before the page loads | No warning on the real site |
+
+All screenshots use **ExampleBank**, a fictional test brand (`*.test` domains) — no real company is imitated. Regenerate them with `npx tsx extension/scripts/screenshots.ts && python scripts/make_readme_media.py`.
 
 ## The problem
 
