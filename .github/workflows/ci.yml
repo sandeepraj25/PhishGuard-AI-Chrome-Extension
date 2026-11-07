@@ -41,7 +41,7 @@ jobs:
       - name: Lint
         run: make lint
       - name: Extension unit tests
-        run: npm --prefix extension exec vitest run
+        run: cd extension && npx vitest run
       - name: Backend tests (Postgres + Redis)
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/phishguard_test
