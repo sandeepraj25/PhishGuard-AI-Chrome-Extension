@@ -49,7 +49,9 @@ test.describe('Layer 3 visual model', () => {
     const page = await context.newPage();
     await page.goto(url);
     await page.click('#pass');
-    await page.waitForTimeout(2000);
+    // Wait for the password-moment verdict (layers include 'page'), then check no 'visual' was added.
+    await expect.poll(async () => (await verdictFor(sw, url))?.layers, { timeout: 15_000 }).toContain('page');
+    await page.waitForTimeout(1000);
     expect((await verdictFor(sw, url))?.layers).toEqual(['url', 'page']);
   });
 });
