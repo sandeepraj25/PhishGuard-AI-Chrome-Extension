@@ -1,0 +1,53 @@
+# Runs every test suite on each push and pull request.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: phishguard_test }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install
+        run: |
+          pip install lightgbm onnx onnxruntime onnxmltools skl2onnx numpy pandas scikit-learn pytest mypy
+          npm --prefix extension ci && npm --prefix backend ci && npm --prefix dashboard ci
+          npx --prefix extension playwright install --with-deps chromium
+      - name: C++ unit tests (GoogleTest)
+        run: cmake -S wasm -B wasm/build -DCMAKE_BUILD_TYPE=Release && cmake --build wasm/build -j && ./wasm/build/pg_tests
+      - name: Regenerate sample data (not committed)
+        run: |
+          python ml/scripts/make_sample_data.py
+          python ml/scripts/make_sample_leadtime.py
+      - name: Feature parity (Python vs C++ vs WASM)
+        run: python ml/scripts/parity_test.py
+      - name: Python tests
+        run: python -m mypy ml/phishguard_ml --ignore-missing-imports && python -m pytest -q ml/tests
+      - name: Lint
+        run: make lint
+      - name: Extension unit tests
+        run: npm --prefix extension exec vitest run
+      - name: Backend tests (Postgres + Redis)
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/phishguard_test
+          TEST_REDIS_URL: redis://localhost:6379/1
+        run: cd backend && npx vitest run
+      - name: Build dashboard and extension
+        run: npm --prefix dashboard run build && npm --prefix extension run build
+      - name: End-to-end tests (real extension in Chromium)
+        run: cd extension && xvfb-run -a npx playwright test

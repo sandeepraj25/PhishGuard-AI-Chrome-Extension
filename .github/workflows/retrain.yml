@@ -2,8 +2,9 @@
 # Opens a pull request with the new model ONLY if it was promoted; nothing ships without review.
 name: weekly-retrain
 on:
-  schedule:
-    - cron: "17 3 * * 1"   # Mondays 03:17 UTC
+  # Manual only for now. Turn the weekly schedule on once real data and secrets exist (docs/HUMAN_TODO.md):
+  # schedule:
+  #   - cron: "17 3 * * 1"   # Mondays 03:17 UTC
   workflow_dispatch: {}
 permissions:
   contents: write

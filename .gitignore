@@ -17,3 +17,7 @@ extension/playwright-report/
 extension/release/
 test-results/
 release
+# Generated data and training checkpoints (recreate with `make data pages leadtime visual`)
+ml/data/
+ml/models/*.pt
+ml/models/candidates/
